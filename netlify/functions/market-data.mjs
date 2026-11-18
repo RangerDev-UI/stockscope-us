@@ -1,6 +1,17 @@
 // StockScope server-only proxy for Twelve Data.
 // Never expose TWELVE_DATA_API_KEY in browser code or commit it to Git.
-const QUOTE_TTL_MS = 90_000;
+const QUOTE_TTL_MS = 3 * 60_000;
+// Process-local guard for basic-plan API usage; not a globally distributed rate limit.
+const API_BUDGET_PER_MINUTE = 7;
+let creditWindowStart = 0;
+let spentCredits = 0;
+function reserveCredits(credits) {
+  const now = Date.now();
+  if (now - creditWindowStart >= 60_000) { creditWindowStart = now; spentCredits = 0; }
+  if (spentCredits + credits > API_BUDGET_PER_MINUTE) return false;
+  spentCredits += credits;
+  return true;
+}
 const HISTORY_TTL_MS = 4 * 60 * 60 * 1000;
 const quoteCache = new Map();
 const historyCache = new Map();
@@ -83,12 +94,13 @@ export default async function handler(request) {
   if (type === "quotes") {
     const symbols = [...new Set((url.searchParams.get("symbols") || "")
       .toUpperCase().split(",").map(x => x.trim()))];
-    if (!symbols.length || symbols.length > 7 || symbols.some(x => !isSymbol(x))) {
-      return respond({ error: "invalid_symbols", message: "เลือกหุ้น 1–7 ตัวที่มีสัญลักษณ์ถูกต้อง" }, 400);
+    if (!symbols.length || symbols.length > 6 || symbols.some(x => !isSymbol(x))) {
+      return respond({ error: "invalid_symbols", message: "เลือกหุ้น 1–6 ตัวที่มีสัญลักษณ์ถูกต้อง" }, 400);
     }
     const now = Date.now();
     const missing = symbols.filter(s => !quoteCache.has(s) || quoteCache.get(s).expires < now);
     if (missing.length) {
+      if (!reserveCredits(missing.length)) return respond({ error: "local_rate_limit", message: "จำกัดการใช้โควตาชั่วคราว กรุณารอประมาณหนึ่งนาทีแล้วลองใหม่" }, 429);
       const result = await upstream("quote", { symbol: missing.join(",") }, apiKey);
       if (result.error && missing.every(s => !quoteCache.has(s))) {
         return respond({ error: result.error, message: result.message }, result.status);
@@ -106,9 +118,9 @@ export default async function handler(request) {
     for (const s of symbols) if (quoteCache.has(s)) quotes[s] = quoteCache.get(s).data;
     const missingSymbols = symbols.filter(s => !quotes[s]);
     return respond({
-      provider: "Twelve Data", fetchedAt: new Date().toISOString(),
+      provider: "Twelve Data", attribution: "Data provided by Twelve Data", fetchedAt: new Date().toISOString(),
       quotes, missingSymbols,
-      note: "ราคาจากแหล่งข้อมูลของ Twelve Data อาจไม่ครอบคลุมทุกตลาด"
+      note: "ข้อมูลอาจล่าช้า ไม่รับประกันความเป็นเรียลไทม์ และอาจไม่ครอบคลุมทุกตลาด"
     });
   }
   if (type === "history") {
@@ -116,6 +128,7 @@ export default async function handler(request) {
     if (!isSymbol(symbol)) return respond({ error: "invalid_symbol" }, 400);
     const cached = historyCache.get(symbol);
     if (cached && cached.expires > Date.now()) return respond(cached.data);
+    if (!reserveCredits(1)) return respond({ error: "local_rate_limit", message: "จำกัดการใช้โควตาชั่วคราว กรุณารอประมาณหนึ่งนาทีแล้วลองใหม่" }, 429);
     const result = await upstream("time_series", { symbol, interval: "1day", outputsize: "260", order: "asc" }, apiKey);
     if (result.error) return respond({ error: result.error, message: result.message }, result.status);
     const raw = result.data;
@@ -129,7 +142,7 @@ export default async function handler(request) {
     })).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && r.close !== null && r.close > 0)
       .sort((a,b) => a.date.localeCompare(b.date));
     const data = {
-      symbol, provider: "Twelve Data", interval: "1day", fetchedAt: new Date().toISOString(),
+      symbol, provider: "Twelve Data", attribution: "Data provided by Twelve Data", interval: "1day", fetchedAt: new Date().toISOString(),
       values, note: "กราฟรายวันเป็นข้อมูลย้อนหลัง ไม่ใช่ราคาซื้อขายทันที"
     };
     historyCache.set(symbol, { data, expires: Date.now() + HISTORY_TTL_MS });
