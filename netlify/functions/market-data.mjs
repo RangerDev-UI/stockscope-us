@@ -116,7 +116,7 @@ export default async function handler(request) {
     if (!isSymbol(symbol)) return respond({ error: "invalid_symbol" }, 400);
     const cached = historyCache.get(symbol);
     if (cached && cached.expires > Date.now()) return respond(cached.data);
-    const result = await upstream("time_series", { symbol, interval: "1day", outputsize: "260", order: "ASC" }, apiKey);
+    const result = await upstream("time_series", { symbol, interval: "1day", outputsize: "260", order: "asc" }, apiKey);
     if (result.error) return respond({ error: result.error, message: result.message }, result.status);
     const raw = result.data;
     if (!Array.isArray(raw?.values) || raw.values.length === 0) {
