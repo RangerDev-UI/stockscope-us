@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b111b" />
+  <meta name="description" content="StockScope ติดตามหุ้นสหรัฐฯ กราฟ TradingView ข่าว Heatmap พอร์ตจำลอง และเครื่องมือคำนวณ DCA" />
+  <title>StockScope 2.0 — หุ้นสหรัฐฯ | พอร์ต | DCA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090f18;
+      --bg2: #0d1521;
+      --card: #111b29;
+      --card2: #131e2d;
+      --card-hover: #1a293a;
+      --text: #e9f1f8;
+      --text2: #9baabd;
+      --muted: #708198;
+      --line: #263449;
+      --line2: #1e2b3b;
+      --accent: #48d8a4;
+      --accent2: #164e42;
+      --blue: #88b9ff;
+      --chip: #172538;
+      --shadow: 0 12px 44px rgba(0,0,0,.17);
+    }
+    body.light {
+      color-scheme: light;
+      --bg: #f3f6fa;
+      --bg2: #f7f9fc;
+      --card: #ffffff;
+      --card2: #f8fafd;
+      --card-hover: #eaf1f8;
+      --text: #122137;
+      --text2: #4d5c70;
+      --muted: #687c91;
+      --line: #dbe4ee;
+      --line2: #e7edf4;
+      --accent: #087b61;
+      --accent2: #d2f2e7;
+      --blue: #236bd4;
+      --chip: #eef3f9;
+      --shadow: 0 14px 38px rgba(19,37,65,.06);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--bg); color:var(--text); font:14px/1.55 'Inter','IBM Plex Sans Thai',system-ui,sans-serif; transition:background .18s,color .18s; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+    a { color:inherit; }
+    .app { min-height:100vh; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:15px 34px; border-bottom:1px solid var(--line2); background:var(--bg2); }
+    .brand { display:flex;align-items:center;gap:12px;white-space:nowrap;text-decoration:none; }
+    .brandmark { width:38px;height:38px;background:var(--accent);border-radius:12px;display:grid;place-items:center;box-shadow:0 8px 20px rgba(72,216,164,.11); }
+    .brandmark svg { width:23px;height:23px;stroke:#09231d;fill:none;stroke-width:2.6;stroke-linejoin:round;stroke-linecap:round; }
+    .brandname { display:block;font-weight:800;letter-spacing:-.7px;font-size:21px;line-height:1.1; }
+    .brandname span { color:var(--accent); }
+    .brandsub { display:block;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.8px;text-transform:uppercase;margin-top:2px; }
+    .topinfo { display:flex;gap:17px;align-items:center; }
+    .live-pill { display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);padding:8px 12px;border-radius:999px;color:var(--text2);font-size:11px;font-weight:700; }
+    .pulse { width:7px;height:7px;background:var(--accent);border-radius:50%;box-shadow:0 0 0 4px rgba(72,216,164,.1); }
+    .clock { text-align:right; }
+    .clock strong { display:block;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums; }
+    .clock small { color:var(--muted);font-size:10px; }
+    .icon-btn { background:var(--card);border:1px solid var(--line);color:var(--text2);width:38px;height:38px;border-radius:11px;display:grid;place-items:center; }
+    .icon-btn:hover { background:var(--card-hover); }
+    .icon-btn svg { width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+    .ticker { min-height:74px;border-bottom:1px solid var(--line2);background:var(--bg2);overflow:hidden; }
+    .page-head { padding:32px 34px 26px;display:flex;gap:12px;justify-content:space-between;align-items:flex-end; }
+    .eyebrow { display:flex;align-items:center;gap:9px;color:var(--accent);font-weight:800;font-size:11px;letter-spacing:1.7px;text-transform:uppercase;margin-bottom:8px; }
+    .eyebrow:before { content:'';height:2px;width:18px;background:var(--accent);border-radius:9px; }
+    h1 { font-size:clamp(26px,3vw,35px);font-weight:800;letter-spacing:-1.5px;margin:0;line-height:1.35; }
+    .intro { font-size:13px;color:var(--text2);margin:8px 0 0; }
+    .source-line { font-size:11px;color:var(--muted);padding-bottom:5px;text-align:right; }
+    .source-line b { color:var(--text2);font-weight:600; }
+    .layout { display:grid;grid-template-columns:286px minmax(0,1fr);gap:20px;margin:0 34px 24px;align-items:start; }
+    .sidebar, .panel { border:1px solid var(--line2);background:var(--card);border-radius:17px;box-shadow:var(--shadow);overflow:hidden; }
+    .sidebar { position:sticky;top:16px; }
+    .sidetop { padding:20px 17px 15px; }
+    .section-name { margin:0;font-size:15px;font-weight:800;letter-spacing:-.3px; }
+    .section-sub { margin:2px 0 0;color:var(--muted);font-size:11px; }
+    .sidetophead { display:flex;align-items:center;justify-content:space-between; }
+    .count { font-size:11px;color:var(--accent);padding:3px 8px;border-radius:7px;background:var(--accent2);font-weight:800; }
+    .searchbox { display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--bg2);border-radius:10px;padding:0 11px;margin-top:15px; }
+    .searchbox svg { width:15px;flex:none;stroke:var(--muted);fill:none;stroke-width:2; }
+    .searchbox input { width:100%;border:0;outline:none;color:var(--text);background:transparent;padding:11px 0;font-size:12px; }
+    .searchbox input::placeholder { color:var(--muted); }
+    .filters { display:flex;gap:5px;margin:12px 0 1px;overflow-x:auto;scrollbar-width:none; }
+    .filters::-webkit-scrollbar { display:none; }
+    .filter { border:0;background:transparent;color:var(--muted);border-radius:7px;padding:7px 10px;font-size:11px;font-weight:700;white-space:nowrap; }
+    .filter.selected { background:var(--accent2);color:var(--accent); }
+    .stocks-list { padding:3px 8px 12px;max-height:540px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent; }
+    .stock-item { display:flex;align-items:center;gap:10px;padding:11px 9px;border:1px solid transparent;border-radius:11px;margin:2px 0;cursor:pointer;transition:background .12s,border-color .12s; }
+    .stock-item:hover { background:var(--card-hover); }
+    .stock-item.active { background:var(--accent2);border-color:rgba(72,216,164,.22); }
+    .symbol-icon { display:grid;place-items:center;flex:none;width:35px;height:35px;border-radius:10px;font-weight:800;font-size:10px;letter-spacing:-.5px;background:var(--chip);color:var(--text2); }
+    .stock-item.active .symbol-icon { background:var(--card);color:var(--accent); }
+    .stock-main { min-width:0;flex:1; }
+    .stock-main strong { display:block;font-size:12px;line-height:1.4;letter-spacing:.2px; }
+    .stock-main span { display:block;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .star { border:0;background:transparent;color:var(--muted);font-size:20px;padding:2px 4px;border-radius:6px;line-height:1; }
+    .star.on { color:#eebf4b; }
+    .star:hover { background:var(--card-hover); }
+    .empty { color:var(--muted);text-align:center;font-size:12px;padding:30px 10px; }
+    .addbox { padding:15px 15px 17px;border-top:1px solid var(--line2);background:var(--card2); }
+    .addbox label { display:block;color:var(--text2);font-size:11px;font-weight:700;margin-bottom:9px; }
+    .addline { display:grid;grid-template-columns:minmax(0,1fr) 78px 34px;gap:5px; }
+    .addline input,.addline select { width:100%;min-width:0;padding:9px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg2);color:var(--text);font-size:11px; }
+    .addline button { background:var(--accent);border:0;border-radius:8px;color:#082319;font-size:22px;font-weight:700; }
+    .add-message { min-height:14px;font-size:10px;margin:5px 0 0;color:var(--muted); }
+    .content { display:flex;flex-direction:column;gap:17px;min-width:0; }
+    .selected-top { padding:18px 21px 12px; }
+    .selected-line { display:flex;gap:15px;align-items:center;justify-content:space-between;flex-wrap:wrap; }
+    .selected-id { display:flex;align-items:center;gap:12px; }
+    .big-icon { width:43px;height:43px;border-radius:12px;background:var(--accent2);color:var(--accent);display:grid;place-items:center;font-size:14px;font-weight:800; }
+    #currentSymbol { font-size:24px;letter-spacing:-.8px;font-weight:800;line-height:1.12; }
+    #currentName { font-size:11px;color:var(--text2);margin-top:3px; }
+    .selected-actions { display:flex;gap:8px;align-items:center; }
+    .small-btn { color:var(--text2);display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--card2);text-decoration:none;padding:9px 12px;font-size:11px;font-weight:700; }
+    .small-btn:hover { background:var(--card-hover); }
+    .small-btn .arrow { font-size:15px;line-height:1; }
+    .quote-area { min-height:146px;overflow:hidden; }
+    .chart-head { padding:18px 19px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap; }
+    .chart-title { display:flex;align-items:center;gap:9px; }
+    .chart-title .dot { height:7px;width:7px;background:var(--accent);border-radius:50%; }
+    .chart-sub { font-size:11px;color:var(--muted);margin-top:2px; }
+    .chart-container { height:530px;border-top:1px solid var(--line2);background:#101722; }
+    body.light .chart-container { background:#fff; }
+    .panel-caption { font-size:10px;color:var(--muted);padding:10px 18px 14px;border-top:1px solid var(--line2); }
+    .bottom-grid { display:grid;grid-template-columns:minmax(0,1.13fr) minmax(290px,.87fr);gap:17px; }
+    .bottom-head { padding:17px 18px 14px;border-bottom:1px solid var(--line2); }
+    .bottom-head p { margin:3px 0 0;color:var(--muted);font-size:11px; }
+    .markets-container { height:465px; }
+    .technical-container { height:465px; }
+    .widget-target { height:100%;width:100%; }
+    .tradingview-widget-container { width:100%;height:100%; }
+    .tradingview-widget-container__widget { width:100%;height:100%; }
+    .loading { display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px; }
+    .footer { display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;margin:20px 34px 34px;color:var(--muted);font-size:11px; }
+    .footer a { color:var(--text2); }
+    .help-text { display:flex;gap:8px;align-items:center; }
+    .help-icon { border:1px solid var(--line);border-radius:50%;display:inline-grid;place-items:center;width:17px;height:17px;font-size:10px; }
+    @media (max-width:1150px) { .layout { grid-template-columns:246px minmax(0,1fr); } .bottom-grid { grid-template-columns:1fr; } .markets-container { height:390px; } .technical-container { height:360px; } }
+    @media (max-width:760px) { .topbar { padding:13px 16px; } .topinfo { gap:9px; } .live-pill { display:none; } .page-head { padding:23px 16px 20px; } .layout { display:flex;flex-direction:column;margin:0 15px 16px;gap:15px; } .sidebar { width:100%;position:static; } .stocks-list { max-height:255px; } .content { width:100%;gap:15px; } .chart-container { height:470px; } .source-line { display:none; } .footer { margin:18px 16px 25px; } }
+    @media (max-width:500px) { .brandname { font-size:19px; } .clock small { display:none; } .topinfo { gap:7px; } .clock strong { font-size:11px; } .icon-btn { height:34px;width:34px; } .ticker { min-height:55px; } h1 { font-size:26px;letter-spacing:-1px; } .selected-top { padding:15px 14px 10px; } .chart-head { padding:15px; } .chart-container { height:440px; } .small-btn { padding:8px 10px; } .markets-container { height:390px; } }
+
+    /* StockScope 2.0 — new sections */
+    .quick-nav {display:flex;align-items:center;gap:7px;padding:10px 34px;border-bottom:1px solid var(--line2);background:var(--bg2);overflow:auto;scrollbar-width:none;position:relative;}
+    .quick-nav::-webkit-scrollbar{display:none}
+    .quick-nav a {white-space:nowrap;text-decoration:none;color:var(--text2);font-size:12px;font-weight:700;padding:9px 13px;border:1px solid transparent;border-radius:10px;transition:background .15s}
+    .quick-nav a:hover,.quick-nav a:focus-visible{background:var(--card-hover);color:var(--accent)}
+    .quick-nav a:first-child{background:var(--accent2);color:var(--accent)}
+    .quick-nav .market-hours{margin-left:auto;display:flex;align-items:center;white-space:nowrap;gap:8px;font-size:11px;color:var(--text2);border:1px solid var(--line);border-radius:99px;padding:7px 11px}
+    .session-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+    .market-hours.in-session .session-dot{background:var(--accent)}
+    .section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+    .embed-extra{height:420px;min-height:320px;overflow:hidden}
+    .embed-fundamentals{height:440px}
+    .embed-news{height:440px}
+    .embed-overview{height:465px}
+    .embed-heatmap{height:465px}
+    .wide-area{margin:0 34px 22px}
+    .wide-section{scroll-margin-top:24px;margin:0 0 23px}
+    .wide-title-row{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0 0 15px}
+    .wide-title-row h2{font-size:23px;letter-spacing:-.7px;margin:0;line-height:1.2}
+    .wide-title-row p{font-size:12px;color:var(--text2);margin:5px 0 0}
+    .eyebrow-small{font-size:10px;letter-spacing:1.6px;font-weight:800;color:var(--accent);margin-bottom:6px}
+    .hint-pill{font-size:11px;color:var(--text2);border:1px solid var(--line);border-radius:99px;padding:6px 10px}
+    .portfolio-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0 17px}
+    .metric-card{background:var(--card2);border:1px solid var(--line2);padding:17px;border-radius:13px;min-width:0}
+    .metric-card .metric-label{color:var(--muted);font-size:11px;display:block;margin-bottom:6px}
+    .metric-card strong{font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-.5px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    .metric-card .detail{display:block;font-size:10px;color:var(--muted);margin-top:4px}
+    .metric-card strong.positive,.positive{color:var(--accent)!important}
+    .metric-card strong.negative,.negative{color:#ef7487!important}
+    .pad-panel{padding:20px}
+    .data-title{font-size:15px;font-weight:800;margin:0 0 5px}
+    .data-desc{font-size:11px;color:var(--text2);margin:0 0 14px}
+    .fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end}
+    .fields.five{grid-template-columns:1.2fr 1fr 1fr 1fr auto}
+    .field label{display:block;font-size:11px;color:var(--text2);margin:0 0 6px;font-weight:700}
+    .field input,.field select{width:100%;min-width:0;border:1px solid var(--line);background:var(--bg2);border-radius:9px;color:var(--text);padding:10px 11px;height:40px;font-size:12px}
+    .field input::placeholder{color:var(--muted)}
+    .primary-btn,.secondary-btn{border:0;border-radius:9px;padding:10px 15px;min-height:40px;font-size:12px;font-weight:800;white-space:nowrap}
+    .primary-btn{background:var(--accent);color:#08251c}
+    .primary-btn:hover{filter:brightness(1.09)}
+    .secondary-btn{border:1px solid var(--line);background:var(--card2);color:var(--text2)}
+    .secondary-btn:hover{background:var(--card-hover)}
+    .actions-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .actions-row .note{margin-left:auto;color:var(--muted);font-size:10px}
+    .form-note{font-size:11px;color:var(--muted);min-height:16px;margin:9px 0 0}
+    .table-scroller{overflow-x:auto;width:100%;margin-top:14px}
+    .portfolio-table{width:100%;border-collapse:collapse;text-align:left;white-space:nowrap;font-size:12px}
+    .portfolio-table th{font-weight:700;font-size:10px;color:var(--muted);background:var(--card2);padding:10px 11px}
+    .portfolio-table td{padding:12px 11px;border-top:1px solid var(--line2);font-variant-numeric:tabular-nums}
+    .portfolio-table td:first-child{font-weight:800;color:var(--text)}
+    .portfolio-table .price-input{width:110px;max-width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg2);color:var(--text);font:inherit}
+    .portfolio-table .empty-state{padding:30px;color:var(--muted);text-align:center;font-weight:400}
+    .delete-btn{font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:7px;padding:6px 9px;background:transparent;color:var(--text2)}
+    .delete-btn:hover{background:var(--card-hover)}
+    .muted-note{color:var(--muted);font-size:11px;line-height:1.7;margin:11px 0 0}
+    .tool-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(290px,.85fr);gap:17px}
+    .calc-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:15px 0}
+    .result-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+    .result-tile{padding:12px;border-radius:10px;background:var(--card2);border:1px solid var(--line2)}
+    .result-tile span{display:block;font-size:10px;color:var(--muted);margin-bottom:5px}
+    .result-tile strong{display:block;font-size:17px;letter-spacing:-.5px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    .growth-chart{display:flex;gap:8px;align-items:flex-end;height:145px;margin:17px 0 0;padding:10px 3px 0;border-bottom:1px solid var(--line);}
+    .growth-col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+    .growth-bar{width:65%;max-width:48px;min-height:3px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--accent),var(--accent2));border:1px solid rgba(72,216,164,.3)}
+    .growth-col span{font-size:9px;color:var(--muted);white-space:nowrap;position:relative;bottom:-17px}
+    .growth-caption{font-size:10px;color:var(--muted);margin:25px 0 0}
+    .gain-hero{margin:15px 0 0;padding:16px;border:1px solid var(--line2);border-radius:11px;background:var(--card2);}
+    .gain-hero span{color:var(--muted);font-size:11px;display:block}
+    .gain-hero strong{display:block;font-size:28px;letter-spacing:-.6px;margin:1px 0;font-variant-numeric:tabular-nums}
+    .gain-hero small{color:var(--text2);font-size:12px}
+    .market-link{font-size:11px;font-weight:700;color:var(--accent);text-decoration:none}
+    .market-link:hover{text-decoration:underline}
+    @media (max-width:1100px){.fields.five{grid-template-columns:repeat(2,minmax(0,1fr))}.fields.five .primary-btn{grid-column:span 2}.section-grid{grid-template-columns:1fr}.embed-overview,.embed-heatmap{height:440px}}
+    @media (max-width:760px){.quick-nav{padding:9px 15px}.quick-nav .market-hours{display:none}.wide-area{margin:0 15px 18px}.tool-grid{grid-template-columns:1fr}.portfolio-summary{gap:7px}.metric-card{padding:12px}.metric-card strong{font-size:18px}.pad-panel{padding:16px}.wide-title-row h2{font-size:21px}}
+    @media (max-width:480px){.fields.five{grid-template-columns:1fr 1fr;gap:10px}.portfolio-summary{grid-template-columns:1fr}.portfolio-summary .metric-card{padding:12px 15px}.calc-fields{grid-template-columns:1fr 1fr;gap:8px}.result-strip{gap:5px}.result-tile{padding:9px}.result-tile strong{font-size:14px}.embed-extra{height:385px}.wide-title-row .hint-pill{display:none}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="StockScope หน้าแรก">
+        <span class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 8-9"/><path d="M15 6h5v5"/></svg></span>
+        <span><span class="brandname">Stock<span>Scope</span></span><span class="brandsub">US MARKET DASHBOARD</span></span>
+      </a>
+      <div class="topinfo">
+        <div class="live-pill"><i class="pulse"></i> ข้อมูลตลาดจาก TradingView</div>
+        <div class="clock" aria-label="เวลานิวยอร์ก"><strong id="nyTime">--:--:--</strong><small>NEW YORK · ET</small></div>
+        <button class="icon-btn" id="themeButton" type="button" title="เปลี่ยนโหมดสว่าง/มืด" aria-label="เปลี่ยนธีม"><svg viewBox="0 0 24 24"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z" /></svg></button>
+      </div>
+    </header>
+    <div class="ticker" id="tickerWidget"><div class="loading">กำลังโหลดข้อมูลราคาหุ้น…</div></div>
+    <nav class="quick-nav" aria-label="ไปยังส่วนต่าง ๆ ของเว็บ">
+      <a href="#analysis">📈 กราฟหุ้น</a><a href="#market-section">🌎 ภาพรวมตลาด</a><a href="#news-section">📰 ข่าว / พื้นฐาน</a><a href="#portfolio">💼 พอร์ตของฉัน</a><a href="#tools">🧮 เครื่องมือคำนวณ</a>
+      <span class="market-hours" id="marketHours" title="ประเมินจากช่วงเวลาซื้อขายปกติ ไม่ได้ตรวจวันหยุดตลาด"><i class="session-dot"></i><span id="sessionLabel">กำลังตรวจสอบช่วงเวลา ET…</span></span>
+    </nav>
+    <div id="top" class="page-head">
+      <div><div class="eyebrow">YOUR MARKET, YOUR MOVE</div><h1>ติดตามหุ้นสหรัฐฯ <span style="color:var(--accent)">ในที่เดียว</span></h1><p class="intro">ค้นหาหุ้นที่สนใจ ดูราคา กราฟ และสัญญาณทางเทคนิคได้ง่าย ๆ</p></div>
+      <div class="source-line">แหล่งข้อมูล <b>TradingView</b><br/>ข้อมูลอาจล่าช้าตามตลาดและสิทธิ์ผู้ให้บริการ</div>
+    </div>
+    <div class="layout">
+      <aside class="sidebar" aria-label="รายการหุ้น">
+        <div class="sidetop">
+          <div class="sidetophead"><div><h2 class="section-name">รายการหุ้น</h2><p class="section-sub">กดชื่อหุ้นเพื่อเปลี่ยนกราฟ</p></div><span class="count" id="stockCount">0 ตัว</span></div>
+          <div class="searchbox"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="searchInput" type="search" placeholder="ค้นหา NVDA, Apple, Tesla..." aria-label="ค้นหาหุ้น" autocomplete="off" /></div>
+          <nav class="filters" aria-label="กรองรายการ"><button class="filter selected" type="button" data-filter="all">ทั้งหมด</button><button class="filter" type="button" data-filter="favorites">★ โปรด</button><button class="filter" type="button" data-filter="tech">เทค/AI</button><button class="filter" type="button" data-filter="etf">ETF</button></nav>
+        </div>
+        <div class="stocks-list" id="stocksList" aria-live="polite"></div>
+        <form class="addbox" id="addStockForm">
+          <label for="customSymbol">+ เพิ่มหุ้นที่ต้องการติดตาม</label>
+          <div class="addline"><input type="text" id="customSymbol" maxlength="12" placeholder="เช่น CRWD" aria-label="ตัวย่อหุ้น" required pattern="[A-Za-z0-9.\-]{1,12}"/><select id="customExchange" aria-label="ตลาดหลักทรัพย์"><option value="NASDAQ">NASDAQ</option><option value="NYSE">NYSE</option><option value="AMEX">AMEX</option></select><button type="submit" title="เพิ่มหุ้น">+</button></div>
+          <p class="add-message" id="addMessage">ใส่สัญลักษณ์หุ้นตามตลาดที่จดทะเบียน</p>
+        </form>
+      </aside>
+      <main class="content" id="analysis">
+        <section class="panel">
+          <div class="selected-top"><div class="selected-line"><div class="selected-id"><div class="big-icon" id="bigIcon">NV</div><div><div id="currentSymbol">NVDA</div><div id="currentName">NVIDIA Corporation · NASDAQ</div></div></div><div class="selected-actions"><button class="small-btn" id="toPortfolio" type="button" title="ใส่ตัวย่อหุ้นนี้ลงในแบบฟอร์มพอร์ต">+ เพิ่มเข้าพอร์ต</button><a class="small-btn" id="tvLink" href="https://www.tradingview.com/symbols/NASDAQ-NVDA/" target="_blank" rel="noopener noreferrer">ดูบน TradingView <span class="arrow">↗</span></a></div></div></div>
+          <div class="quote-area" id="quoteWidget"><div class="loading">กำลังโหลดราคาหุ้น…</div></div>
+        </section>
+        <section class="panel">
+          <div class="chart-head"><div><div class="chart-title"><span class="dot"></span><h2 class="section-name">กราฟราคาแบบโต้ตอบ</h2></div><div class="chart-sub">เปลี่ยนกรอบเวลา เพิ่ม Indicators และซูมกราฟได้ในหน้ากราฟ</div></div><span style="font-size:10px;color:var(--muted)">USD · US STOCKS</span></div>
+          <div id="chartWidget" class="chart-container"><div class="loading">กำลังโหลดกราฟ…</div></div>
+          <div class="panel-caption">กราฟและราคาให้บริการโดย TradingView • ราคาบางตลาดอาจล่าช้า ไม่ใช่ราคาเสนอซื้อขายที่รับประกัน</div>
+        </section>
+        <div class="bottom-grid">
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">กระดานราคาหุ้นยอดนิยม</h2><p>ดูราคา การเปลี่ยนแปลง และเปอร์เซ็นต์เปลี่ยนแปลงของหุ้นหลายตัว</p></div><div class="markets-container" id="marketWidget"><div class="loading">กำลังโหลดกระดานราคา…</div></div></section>
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">สรุปสัญญาณทางเทคนิค</h2><p id="technicalSubtitle">ภาพรวม Indicators ของ NVDA</p></div><div class="technical-container" id="technicalWidget"><div class="loading">กำลังโหลด Indicators…</div></div></section>
+        </div>
+        <div class="section-grid" id="market-section">
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">🌎 ภาพรวมตลาดสหรัฐฯ</h2><p>ดู ETF ที่ติดตามดัชนีหลักและหุ้นสหรัฐฯ ที่นิยม</p></div><div class="embed-extra embed-overview" id="overviewWidget" data-lazy-widget="overview"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดภาพรวมตลาด…</div></div></section>
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">🟩 Heatmap หุ้น S&amp;P 500</h2><p>ภาพรวมการเปลี่ยนแปลงราคาหุ้น แยกตามกลุ่มอุตสาหกรรม</p></div><div class="embed-extra embed-heatmap" id="heatmapWidget" data-lazy-widget="heatmap"><div class="loading">เลื่อนมาที่นี่เพื่อโหลด Heatmap…</div></div></section>
+        </div>
+        <div class="section-grid" id="news-section">
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">📰 ข่าวตลาดและหุ้น</h2><p>ข่าวจาก TradingView <span id="newsTickerText">• NVDA</span> · เนื้อหาส่วนใหญ่เป็นภาษาอังกฤษ</p></div><div class="embed-extra embed-news" id="newsWidget" data-lazy-widget="news"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดข่าว…</div></div></section>
+          <section class="panel"><div class="bottom-head"><h2 class="section-name">📑 ข้อมูลพื้นฐานบริษัท</h2><p id="fundamentalsTickerText">ข้อมูลรายได้และตัวชี้วัดพื้นฐานของ NVDA</p></div><div class="embed-extra embed-fundamentals" id="fundamentalWidget" data-lazy-widget="fundamental"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดข้อมูลบริษัท…</div></div></section>
+        </div>
+      </main>
+    </div>
+    <div class="wide-area">
+      <section class="wide-section" id="portfolio">
+        <div class="wide-title-row"><div><div class="eyebrow-small">YOUR PORTFOLIO</div><h2>💼 พอร์ตหุ้นของฉัน</h2><p>บันทึกจำนวนหุ้นและต้นทุนเฉลี่ย แล้วกรอกราคาล่าสุดเพื่อคำนวณกำไร–ขาดทุน</p></div><span class="hint-pill">เก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น</span></div>
+        <div class="panel pad-panel">
+          <div class="portfolio-summary">
+            <div class="metric-card"><span class="metric-label">ต้นทุนรวม</span><strong id="portfolioCost">$0.00</strong><span class="detail">รวมต้นทุนจากรายการที่กรอก</span></div>
+            <div class="metric-card"><span class="metric-label">มูลค่าพอร์ตตามราคาที่กรอก</span><strong id="portfolioValue">—</strong><span class="detail" id="portfolioValueDetail">กรอกราคาปัจจุบันเพื่อคำนวณ</span></div>
+            <div class="metric-card"><span class="metric-label">กำไร / ขาดทุน รวม</span><strong id="portfolioProfit">—</strong><span class="detail" id="portfolioProfitDetail">ยังไม่มีข้อมูลราคาที่ครบถ้วน</span></div>
+          </div>
+          <h3 class="data-title">เพิ่มรายการถือครอง</h3><p class="data-desc">หากเพิ่มหุ้นตัวเดิมอีกครั้ง ระบบจะรวมจำนวนหุ้นและคำนวณต้นทุนเฉลี่ยใหม่</p>
+          <form id="holdingForm" class="fields five">
+            <div class="field"><label for="holdTicker">ตัวย่อหุ้น</label><input id="holdTicker" maxlength="12" placeholder="NVDA" pattern="[A-Za-z0-9.\-]{1,12}" required autocomplete="off"/></div>
+            <div class="field"><label for="holdQty">จำนวนหุ้น</label><input id="holdQty" type="number" min="0.000001" max="1000000000" step="any" placeholder="เช่น 2.5" required/></div>
+            <div class="field"><label for="holdAvg">ต้นทุน/หุ้น (USD)</label><input id="holdAvg" type="number" min="0" max="1000000000" step="any" placeholder="เช่น 120" required/></div>
+            <div class="field"><label for="holdPrice">ราคาล่าสุด (USD) ไม่บังคับ</label><input id="holdPrice" type="number" min="0" max="1000000000" step="any" placeholder="กรอกเอง"/></div>
+            <button type="submit" class="primary-btn">+ เพิ่มเข้าพอร์ต</button>
+          </form>
+          <p class="form-note" id="holdingMessage" role="status">หมายเหตุ: ราคาจาก TradingView ไม่สามารถดึงเข้าเครื่องคำนวณนี้ได้อัตโนมัติ กรุณากรอกราคาด้วยตัวเอง</p>
+          <div class="table-scroller"><table class="portfolio-table"><thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุน/หุ้น</th><th>ราคาล่าสุด (แก้ไขได้)</th><th>มูลค่าตลาด</th><th>กำไร/ขาดทุน</th><th></th></tr></thead><tbody id="holdingsBody"><tr><td class="empty-state" colspan="7">ยังไม่มีหุ้นในพอร์ต</td></tr></tbody></table></div>
+          <div class="actions-row" style="margin-top:13px"><button class="secondary-btn" type="button" id="exportPortfolio">↓ ส่งออกพอร์ต CSV</button><button class="secondary-btn" type="button" id="backupData">↓ สำรองข้อมูลทั้งหมด JSON</button><button class="secondary-btn" type="button" id="importData">↑ นำเข้าข้อมูลสำรอง</button><input type="file" accept=".json,application/json" id="importDataFile" hidden aria-label="เลือกไฟล์สำรองข้อมูล JSON"/><span class="note">คำนวณเป็น USD ยังไม่รวมค่าธรรมเนียม ภาษี และอัตราแลกเปลี่ยน</span></div>
+        </div>
+      </section>
+      <section class="wide-section" id="tools">
+        <div class="wide-title-row"><div><div class="eyebrow-small">INVESTMENT TOOLS</div><h2>🧮 เครื่องมือคำนวณ</h2><p>ลองคำนวณการลงทุนรายเดือนและผลตอบแทนโดยไม่ต้องติดตั้งแอปเพิ่ม</p></div><span class="hint-pill">ตัวเลขตัวอย่าง ไม่ใช่การคาดการณ์ตลาด</span></div>
+        <div class="tool-grid">
+          <section class="panel pad-panel"><h3 class="data-title">📊 จำลอง DCA รายเดือน</h3><p class="data-desc">สมมติเติมเงินทุกสิ้นเดือน และทบต้นตามผลตอบแทนเฉลี่ยที่กำหนด</p>
+            <div class="calc-fields">
+              <div class="field"><label for="dcaMonthly">ลงทุนต่อเดือน (บาท)</label><input id="dcaMonthly" type="number" min="0" max="1000000000" step="100" value="1000"/></div>
+              <div class="field"><label for="dcaInitial">เงินเริ่มต้น (บาท)</label><input id="dcaInitial" type="number" min="0" max="1000000000" step="100" value="0"/></div>
+              <div class="field"><label for="dcaYears">ระยะเวลา (ปี)</label><input id="dcaYears" type="number" min="1" max="50" step="1" value="10"/></div>
+              <div class="field"><label for="dcaRate">สมมติผลตอบแทน/ปี (%)</label><input id="dcaRate" type="number" min="-50" max="50" step="0.5" value="8"/></div>
+            </div>
+            <div class="result-strip"><div class="result-tile"><span>เงินลงทุนสะสม</span><strong id="dcaPrincipal">—</strong></div><div class="result-tile"><span>มูลค่าในอนาคต (สมมติ)</span><strong id="dcaFuture">—</strong></div><div class="result-tile"><span>ผลตอบแทนจำลอง</span><strong id="dcaGain">—</strong></div></div>
+            <div class="growth-chart" id="dcaChart" role="img" aria-label="กราฟแสดงมูลค่าการลงทุนจำลองแต่ละช่วงปี"></div>
+            <p class="growth-caption">แถบแสดงมูลค่าประมาณตามสมมติฐาน ไม่รวมค่าธรรมเนียม ภาษี หรือความผันผวนระหว่างทาง</p>
+          </section>
+          <section class="panel pad-panel"><h3 class="data-title">💵 คำนวณกำไร–ขาดทุนหุ้น</h3><p class="data-desc">ใช้ราคาต้นทุนและราคาปัจจุบันที่คุณกรอกเอง</p>
+            <div class="calc-fields">
+              <div class="field"><label for="profitBuy">ราคาซื้อ/หุ้น (USD)</label><input id="profitBuy" type="number" min="0" max="1000000000" step="any" value="100"/></div>
+              <div class="field"><label for="profitNow">ราคาปัจจุบัน/หุ้น (USD)</label><input id="profitNow" type="number" min="0" max="1000000000" step="any" value="120"/></div>
+              <div class="field"><label for="profitQty">จำนวนหุ้น</label><input id="profitQty" type="number" min="0.000001" max="1000000000" step="any" value="1"/></div>
+            </div>
+            <div class="gain-hero"><span>กำไร / ขาดทุน (USD)</span><strong id="profitValue">—</strong><small id="profitPct">—</small></div>
+            <p class="muted-note">ไม่รวมค่าคอมมิชชัน ภาษี เงินปันผล และการเปลี่ยนแปลงค่าเงิน USD/THB • เครื่องมือนี้ไม่ส่งคำสั่งซื้อขาย</p>
+          </section>
+        </div>
+      </section>
+    </div>
+    <footer class="footer"><span class="help-text"><span class="help-icon">i</span> เว็บไซต์สำหรับติดตามข้อมูล ไม่ใช่คำแนะนำในการลงทุน • เวลาซื้อขายปกติ 09:30–16:00 น. ตามเวลานิวยอร์ก (ไม่รวมวันหยุด)</span><span>Powered by <a href="https://www.tradingview.com/" target="_blank" rel="noopener noreferrer">TradingView</a> · สร้างด้วย HTML / CSS / JavaScript</span></footer>
+  </div>
+  <script>
+    'use strict';
+    const STORAGE_KEY = 'stockscope-v1';
+    const defaultStocks = [
+      {ticker:'NVDA',name:'NVIDIA',exchange:'NASDAQ',category:'tech'},
+      {ticker:'MSFT',name:'Microsoft',exchange:'NASDAQ',category:'tech'},
+      {ticker:'GOOGL',name:'Alphabet (Google)',exchange:'NASDAQ',category:'tech'},
+      {ticker:'AMZN',name:'Amazon',exchange:'NASDAQ',category:'tech'},
+      {ticker:'PLTR',name:'Palantir',exchange:'NASDAQ',category:'tech'},
+      {ticker:'AAPL',name:'Apple',exchange:'NASDAQ',category:'tech'},
+      {ticker:'META',name:'Meta Platforms',exchange:'NASDAQ',category:'tech'},
+      {ticker:'TSLA',name:'Tesla',exchange:'NASDAQ',category:'tech'},
+      {ticker:'AVGO',name:'Broadcom',exchange:'NASDAQ',category:'tech'},
+      {ticker:'AMD',name:'Advanced Micro Devices',exchange:'NASDAQ',category:'tech'},
+      {ticker:'TSM',name:'Taiwan Semiconductor',exchange:'NYSE',category:'tech'},
+      {ticker:'ASML',name:'ASML Holding',exchange:'NASDAQ',category:'tech'},
+      {ticker:'NFLX',name:'Netflix',exchange:'NASDAQ',category:'other'},
+      {ticker:'LLY',name:'Eli Lilly',exchange:'NYSE',category:'other'},
+      {ticker:'JPM',name:'JPMorgan Chase',exchange:'NYSE',category:'other'},
+      {ticker:'VOO',name:'Vanguard S&P 500 ETF',exchange:'AMEX',category:'etf'},
+      {ticker:'QQQM',name:'Invesco Nasdaq 100 ETF',exchange:'NASDAQ',category:'etf'},
+      {ticker:'SCHD',name:'Schwab US Dividend ETF',exchange:'AMEX',category:'etf'},
+      {ticker:'JEPQ',name:'JPMorgan Nasdaq Premium Income',exchange:'NASDAQ',category:'etf'},
+      {ticker:'SMH',name:'VanEck Semiconductor ETF',exchange:'NASDAQ',category:'etf'}
+    ];
+    // TradingView symbols usually use AMEX for NYSE Arca listings.
+    let persisted = {};
+    try { persisted = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')||{}; } catch (_) {}
+    const custom = Array.isArray(persisted.custom) ? persisted.custom.filter(s =>
+      s && typeof s.ticker==='string' && /^[A-Z0-9.\-]{1,12}$/.test(s.ticker) &&
+      ['NASDAQ','NYSE','AMEX'].includes(s.exchange)).map(s=>({ticker:s.ticker,name:s.name||s.ticker,exchange:s.exchange,category:'other'})) : [];
+    const stocks = [...defaultStocks, ...custom.filter(s=>!defaultStocks.some(x=>x.ticker===s.ticker))];
+    let favorites = new Set(Array.isArray(persisted.favorites) ? persisted.favorites : ['NVDA','MSFT','GOOGL','AMZN','PLTR']);
+    let selected = stocks.find(x=>x.ticker===persisted.selected) || stocks[0];
+    let filter='all';
+    let light=Boolean(persisted.light);
+    const $ = id=>document.getElementById(id);
+    if(light) document.body.classList.add('light');
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY,JSON.stringify({custom:stocks.filter(s=>!defaultStocks.some(d=>d.ticker===s.ticker)),favorites:[...favorites],selected:selected.ticker,light})); } catch (_) {}
+    }
+    function initials(s) { return s.ticker.length<=3 ? s.ticker : s.ticker.slice(0,2); }
+    function symbol(s) { return s.exchange + ':' + s.ticker; }
+    function renderList() {
+      const query=$('searchInput').value.trim().toLowerCase();
+      const filtered=stocks.filter(s=>(!query||[s.ticker,s.name,s.exchange].some(x=>x.toLowerCase().includes(query))) &&
+        (filter==='all'||(filter==='favorites'&&favorites.has(s.ticker))||(filter==='tech'&&s.category==='tech')||(filter==='etf'&&s.category==='etf')));
+      $('stockCount').textContent=stocks.length+' ตัว';
+      const root=$('stocksList');root.replaceChildren();
+      if(!filtered.length){ const n=document.createElement('p');n.className='empty';n.textContent='ไม่พบหุ้นในรายการ ลองเปลี่ยนคำค้นหา';root.appendChild(n);return; }
+      for(const s of filtered) {
+        const row=document.createElement('div');row.className='stock-item'+(selected.ticker===s.ticker?' active':'');row.tabIndex=0;row.setAttribute('role','button');row.setAttribute('aria-label','ดูกราฟ '+s.ticker);
+        const ico=document.createElement('span');ico.className='symbol-icon';ico.textContent=initials(s);
+        const main=document.createElement('div');main.className='stock-main';
+        const strong=document.createElement('strong');strong.textContent=s.ticker;
+        const name=document.createElement('span');name.textContent=s.name;main.append(strong,name);
+        const star=document.createElement('button');star.type='button';star.className='star'+(favorites.has(s.ticker)?' on':'');star.textContent=favorites.has(s.ticker)?'★':'☆';star.title=favorites.has(s.ticker)?'นำออกจากรายการโปรด':'เพิ่มในรายการโปรด';star.setAttribute('aria-label',star.title);
+        star.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(s.ticker)) favorites.delete(s.ticker); else favorites.add(s.ticker);save();renderList();});
+        row.addEventListener('click',()=>selectStock(s));row.addEventListener('keydown',e=>{if(e.target===row&&(e.key==='Enter'||e.key===' ')){e.preventDefault();selectStock(s);}});
+        row.append(ico,main,star);root.appendChild(row);
+      }
+    }
+    function mountWidget(id,file,settings){
+      const root=$(id);root.replaceChildren();
+      const outer=document.createElement('div');outer.className='tradingview-widget-container';
+      const inner=document.createElement('div');inner.className='tradingview-widget-container__widget';
+      outer.appendChild(inner);
+      const script=document.createElement('script');script.type='text/javascript';script.src='https://s3.tradingview.com/external-embedding/'+file;script.async=true;script.textContent=JSON.stringify(settings);
+      outer.appendChild(script);root.appendChild(outer);
+    }
+    function theme(){return light?'light':'dark';}
+    function renderStockWidgets(){
+      $('currentSymbol').textContent=selected.ticker;
+      $('currentName').textContent=selected.name+' · '+selected.exchange;
+      $('bigIcon').textContent=initials(selected);
+      $('technicalSubtitle').textContent='ภาพรวม Indicators ของ '+selected.ticker;
+      $('tvLink').href='https://www.tradingview.com/symbols/'+encodeURIComponent(selected.exchange)+'-'+encodeURIComponent(selected.ticker)+'/';
+      mountWidget('quoteWidget','embed-widget-symbol-info.js',{
+        symbol:symbol(selected),width:'100%',locale:'en',colorTheme:theme(),isTransparent:true
+      });
+      mountWidget('chartWidget','embed-widget-advanced-chart.js',{
+        autosize:true,symbol:symbol(selected),interval:'D',timezone:'America/New_York',theme:theme(),style:'1',
+        locale:'en',allow_symbol_change:true,save_image:false,hide_top_toolbar:false,hide_side_toolbar:false,
+        withdateranges:true,calendar:false,support_host:'https://www.tradingview.com'
+      });
+      mountWidget('technicalWidget','embed-widget-technical-analysis.js',{
+        interval:'1D',width:'100%',height:'100%',isTransparent:true,symbol:symbol(selected),showIntervalTabs:true,
+        displayMode:'single',locale:'en',colorTheme:theme()
+      });
+    }
+    function renderMarketWidgets(){
+      mountWidget('tickerWidget','embed-widget-ticker-tape.js',{
+        symbols:['NVDA','MSFT','AAPL','GOOGL','AMZN','META','TSLA','PLTR','AVGO'].map(t=>{
+          const s=stocks.find(x=>x.ticker===t);return {proName:symbol(s),title:s.name};
+        }),showSymbolLogo:true,isTransparent:true,displayMode:'adaptive',colorTheme:theme(),locale:'en'
+      });
+      const groups=[
+        {name:'หุ้นขนาดใหญ่',tickers:['NVDA','MSFT','AAPL','GOOGL','AMZN','META','TSLA']},
+        {name:'AI / Semiconductor',tickers:['PLTR','AVGO','AMD','TSM','ASML']},
+        {name:'ETF และหุ้นอื่น',tickers:stocks.filter(s=>s.category==='etf'||s.category==='other').map(s=>s.ticker)}
+      ];
+      const extra=stocks.filter(s=>!groups.some(g=>g.tickers.includes(s.ticker))).map(s=>s.ticker);
+      if(extra.length) groups.push({name:'หุ้นเพิ่มเติม',tickers:extra});
+      mountWidget('marketWidget','embed-widget-market-quotes.js',{
+        title:'US Market Watchlist',width:'100%',height:'100%',locale:'en',showSymbolLogo:true,colorTheme:theme(),
+        symbolsGroups:groups.map(g=>({name:g.name,symbols:g.tickers.map(t=>{
+          const s=stocks.find(x=>x.ticker===t);return {name:symbol(s),displayName:s.name};
+        })}))
+      });
+    }
+    function selectStock(s){selected=s;save();renderList();renderStockWidgets();}
+    document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+      filter=btn.dataset.filter;document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('selected',b===btn));renderList();
+    }));
+    $('searchInput').addEventListener('input',renderList);
+    $('themeButton').addEventListener('click',()=>{
+      light=!light;document.body.classList.toggle('light',light);save();renderStockWidgets();renderMarketWidgets();
+    });
+    $('addStockForm').addEventListener('submit',e=>{
+      e.preventDefault();const ticker=$('customSymbol').value.trim().toUpperCase();const exchange=$('customExchange').value;
+      if(!/^[A-Z0-9.\-]{1,12}$/.test(ticker)){$('addMessage').textContent='โปรดกรอกตัวย่อหุ้นภาษาอังกฤษให้ถูกต้อง';return;}
+      let s=stocks.find(x=>x.ticker===ticker);
+      if(!s){s={ticker,name:ticker,exchange,category:'other'};stocks.push(s);renderMarketWidgets();$('addMessage').textContent='เพิ่ม '+ticker+' แล้ว (ถ้าไม่มีข้อมูล โปรดตรวจสอบตลาด)';}
+      else $('addMessage').textContent='เลือกหุ้น '+ticker+' แล้ว';
+      $('customSymbol').value='';$('searchInput').value='';filter='all';
+      document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter==='all'));
+      selectStock(s);
+    });
+
+    // ---- StockScope 2.0: supplementary TradingView widgets (lazy-loaded) ----
+    const lazyWidgetIds = {overview:'overviewWidget',heatmap:'heatmapWidget',news:'newsWidget',fundamental:'fundamentalWidget'};
+    const lazyLoaded = new Set();
+    function renderLazyWidget(kind) {
+      lazyLoaded.add(kind);
+      if(kind==='overview') mountWidget('overviewWidget','embed-widget-market-overview.js',{
+        colorTheme:theme(),dateRange:'1M',locale:'en',isTransparent:true,showFloatingTooltip:true,
+        width:'100%',height:'100%',showSymbolLogo:true,showChart:true,
+        tabs:[
+          {title:'US Index ETFs',symbols:[{s:'AMEX:SPY',d:'SPY · S&P 500 ETF'},{s:'NASDAQ:QQQ',d:'QQQ · Nasdaq 100 ETF'},{s:'AMEX:DIA',d:'DIA · Dow Jones ETF'},{s:'AMEX:IWM',d:'IWM · Russell 2000 ETF'}]},
+          {title:'Tech / AI',symbols:[{s:'NASDAQ:NVDA',d:'NVIDIA'},{s:'NASDAQ:MSFT',d:'Microsoft'},{s:'NASDAQ:GOOGL',d:'Alphabet'},{s:'NASDAQ:PLTR',d:'Palantir'}]}
+        ]
+      });
+      if(kind==='heatmap') mountWidget('heatmapWidget','embed-widget-stock-heatmap.js',{
+        dataSource:'SPX500',blockSize:'market_cap_basic',blockColor:'change',grouping:'sector',locale:'en',
+        colorTheme:theme(),exchanges:[],hasTopBar:true,isDataSetEnabled:false,isZoomEnabled:true,hasSymbolTooltip:true,
+        isMonoSize:false,width:'100%',height:'100%'
+      });
+      if(kind==='news') mountWidget('newsWidget','embed-widget-timeline.js',{
+        displayMode:'regular',feedMode:'symbol',symbol:symbol(selected),colorTheme:theme(),isTransparent:true,
+        locale:'en',width:'100%',height:'100%'
+      });
+      if(kind==='fundamental') {
+        if(selected.category==='etf') {
+          const root=$('fundamentalWidget');root.replaceChildren();const note=document.createElement('p');
+          note.className='empty';note.textContent='ข้อมูลพื้นฐานแบบรายบริษัทอาจไม่รองรับ ETF กรุณาเลือกหุ้นรายตัวเพื่อดูงบการเงิน';root.appendChild(note);
+        } else mountWidget('fundamentalWidget','embed-widget-financials.js',{
+          symbol:symbol(selected),colorTheme:theme(),displayMode:'regular',isTransparent:true,locale:'en',width:'100%',height:'100%'
+        });
+      }
+    }
+    function refreshStockExtras() {
+      $('newsTickerText').textContent='• '+selected.ticker;
+      $('fundamentalsTickerText').textContent='ข้อมูลรายได้และตัวชี้วัดพื้นฐานของ '+selected.ticker;
+      for(const kind of ['news','fundamental']) if(lazyLoaded.has(kind)) renderLazyWidget(kind);
+    }
+    if('IntersectionObserver' in window) {
+      const observer=new IntersectionObserver(entries=>{for(const entry of entries){
+        if(entry.isIntersecting){const kind=entry.target.dataset.lazyWidget;if(!lazyLoaded.has(kind))renderLazyWidget(kind);observer.unobserve(entry.target);}
+      }},{rootMargin:'200px 0px'});
+      Object.entries(lazyWidgetIds).forEach(([kind,id])=>observer.observe($(id)));
+    } else Object.keys(lazyWidgetIds).forEach(renderLazyWidget);
+    // Original selection and theme controls are kept; these listeners refresh new sections.
+    const originalSelectStock=selectStock;
+    selectStock=function(s){originalSelectStock(s);refreshStockExtras();};
+    $('themeButton').addEventListener('click',()=>{for(const kind of lazyLoaded) renderLazyWidget(kind);});
+    refreshStockExtras();
+    // ---- Market session clock: indicative only, no holidays or special sessions checked ----
+    function updateSession() {
+      try {
+        const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
+        const get=k=>parts.find(x=>x.type===k)?.value||'';
+        const day=get('weekday'),minutes=Number(get('hour'))*60+Number(get('minute'));
+        const regular= !['Sat','Sun'].includes(day) && minutes>=570 && minutes<960;
+        $('marketHours').classList.toggle('in-session',regular);
+        $('sessionLabel').textContent=regular?'ช่วงเวลาซื้อขายปกติ (ไม่เช็กวันหยุด)':'นอกช่วงเวลาซื้อขายปกติ';
+      } catch(_) { $('sessionLabel').textContent='ตลาดสหรัฐฯ · 09:30–16:00 ET'; }
+    }
+    // ---- Manual portfolio tracker ----
+    const HOLDING_KEY='stockscope-holdings-v2';
+    function safeHoldingsLoad(){
+      try { const a=JSON.parse(localStorage.getItem(HOLDING_KEY)||'[]');if(!Array.isArray(a))return [];
+        return a.filter(h=>h && /^[A-Z0-9.\-]{1,12}$/.test(h.ticker)&&Number.isFinite(h.qty)&&h.qty>0&&Number.isFinite(h.cost)&&h.cost>=0&&
+          (h.price===null||(Number.isFinite(h.price)&&h.price>=0))).slice(0,250);
+      } catch(_){return [];}
+    }
+    let holdings=safeHoldingsLoad();
+    const fmtUSD=(n,digits=2)=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:digits,maximumFractionDigits:digits}).format(n);
+    const fmtTHB=n=>new Intl.NumberFormat('th-TH',{style:'currency',currency:'THB',maximumFractionDigits:0}).format(n);
+    const fmtNumber=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:6}).format(n);
+    const fmtSignedUSD=n=>(n>0?'+':'')+fmtUSD(n);
+    const validNumber=(s,max=1e9)=>s!==''&&s!==null&&s!==undefined&&Number.isFinite(Number(s))&&Number(s)>=0&&Number(s)<=max;
+    function saveHoldings(){try{localStorage.setItem(HOLDING_KEY,JSON.stringify(holdings));return true;}catch(_){$('holdingMessage').textContent='ไม่สามารถบันทึกข้อมูลลงเบราว์เซอร์ได้ กรุณาส่งออกข้อมูลสำรอง';return false;}}
+    function makeCell(textValue){const td=document.createElement('td');td.textContent=textValue;return td;}
+    function renderHoldings(){
+      const root=$('holdingsBody');root.replaceChildren();
+      const totalCost=holdings.reduce((sum,h)=>sum+h.qty*h.cost,0);
+      const complete=holdings.length>0&&holdings.every(h=>h.price!==null);
+      const totalValue=complete?holdings.reduce((sum,h)=>sum+h.qty*h.price,0):null;
+      const totalProfit=complete?totalValue-totalCost:null;
+      $('portfolioCost').textContent=fmtUSD(totalCost);
+      $('portfolioValue').textContent=complete?fmtUSD(totalValue):'—';
+      $('portfolioProfit').textContent=complete?fmtSignedUSD(totalProfit):'—';
+      $('portfolioValueDetail').textContent=complete?'ราคาที่กรอกเอง • ไม่ใช่ราคาเรียลไทม์':(holdings.length?'กรอกราคาให้ครบทุกหุ้นเพื่อคำนวณ':'ยังไม่มีรายการถือครอง');
+      $('portfolioProfitDetail').textContent=complete?((totalCost>0?(totalProfit/totalCost*100).toFixed(2)+'%':'ไม่สามารถคิดเปอร์เซ็นต์เมื่อต้นทุนเป็นศูนย์')):'ยังไม่มีข้อมูลราคาครบถ้วน';
+      $('portfolioProfit').classList.toggle('positive',complete&&totalProfit>=0);
+      $('portfolioProfit').classList.toggle('negative',complete&&totalProfit<0);
+      if(!holdings.length){const tr=document.createElement('tr');const td=makeCell('ยังไม่มีหุ้นในพอร์ต — เพิ่มรายการด้านบนเพื่อเริ่มใช้งาน');td.colSpan=7;td.className='empty-state';tr.appendChild(td);root.appendChild(tr);return;}
+      for(const h of holdings){
+        const tr=document.createElement('tr');const ticker=makeCell(h.ticker);tr.appendChild(ticker);
+        tr.appendChild(makeCell(fmtNumber(h.qty)));tr.appendChild(makeCell(fmtUSD(h.cost)));
+        const priceCell=document.createElement('td');const input=document.createElement('input');
+        input.type='number';input.min='0';input.max='1000000000';input.step='any';input.className='price-input';
+        input.value=h.price===null?'':String(h.price);input.placeholder='กรอกราคา';input.setAttribute('aria-label','ราคาล่าสุดของ '+h.ticker);
+        input.addEventListener('change',()=>{
+          const str=input.value.trim();if(str!==''&&!validNumber(str)){input.value=h.price===null?'':String(h.price);$('holdingMessage').textContent='ราคาไม่ถูกต้อง ต้องอยู่ระหว่าง 0 ถึง 1,000,000,000';return;}
+          h.price=str===''?null:Number(str);saveHoldings();renderHoldings();
+        });
+        priceCell.appendChild(input);tr.appendChild(priceCell);
+        tr.appendChild(makeCell(h.price===null?'—':fmtUSD(h.qty*h.price)));
+        const pnl=h.price===null?null:h.qty*(h.price-h.cost);
+        const pnlCell=makeCell(pnl===null?'—':fmtSignedUSD(pnl));if(pnl!==null)pnlCell.className=pnl>=0?'positive':'negative';tr.appendChild(pnlCell);
+        const control=document.createElement('td');const del=document.createElement('button');del.type='button';del.className='delete-btn';del.textContent='ลบ';del.setAttribute('aria-label','ลบ '+h.ticker+' ออกจากพอร์ต');
+        del.addEventListener('click',()=>{holdings=holdings.filter(x=>x!==h);saveHoldings();renderHoldings();$('holdingMessage').textContent='ลบ '+h.ticker+' จากพอร์ตแล้ว';});
+        control.appendChild(del);tr.appendChild(control);root.appendChild(tr);
+      }
+    }
+    $('holdingForm').addEventListener('submit',e=>{
+      e.preventDefault();const ticker=$('holdTicker').value.trim().toUpperCase();
+      const qtyRaw=$('holdQty').value.trim(),costRaw=$('holdAvg').value.trim(),priceRaw=$('holdPrice').value.trim();
+      if(!/^[A-Z0-9.\-]{1,12}$/.test(ticker)||!validNumber(qtyRaw)||Number(qtyRaw)<=0||!validNumber(costRaw)||!validNumber(priceRaw)&&priceRaw!==''){
+        $('holdingMessage').textContent='กรุณากรอกตัวย่อ จำนวนหุ้น ต้นทุน และราคาที่เป็นตัวเลขถูกต้อง';return;
+      }
+      const qty=Number(qtyRaw),cost=Number(costRaw),price=priceRaw===''?null:Number(priceRaw);
+      const existing=holdings.find(h=>h.ticker===ticker);
+      if(existing){const newQty=existing.qty+qty;if(newQty>1e9){$('holdingMessage').textContent='จำนวนหุ้นรวมเกินขีดจำกัด';return;}
+        existing.cost=(existing.qty*existing.cost+qty*cost)/newQty;existing.qty=newQty;
+        if(price!==null) existing.price=price;
+      }else if(holdings.length<250){holdings.push({ticker,qty,cost,price});}
+      else{$('holdingMessage').textContent='รายการเต็มแล้ว (สูงสุด 250 หุ้น)';return;}
+      saveHoldings();renderHoldings();$('holdingMessage').textContent='บันทึก '+ticker+' สำเร็จ • ราคาล่าสุดต้องกรอกและปรับเอง';
+      $('holdTicker').value='';$('holdQty').value='';$('holdAvg').value='';$('holdPrice').value='';
+    });
+    function downloadContent(name,content,mime){
+      const blob=new Blob([content],{type:mime});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;
+      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+    }
+    $('exportPortfolio').addEventListener('click',()=>{
+      if(!holdings.length){$('holdingMessage').textContent='ยังไม่มีรายการพอร์ตสำหรับส่งออก';return;}
+      const csvCell=v=>'"'+String(v).replace(/"/g,'""')+'"';
+      const rows=[['Ticker','Quantity','Average Cost USD','Manual Last Price USD','Market Value USD','Profit Loss USD']];
+      for(const h of holdings)rows.push([h.ticker,h.qty,h.cost,h.price===null?'':h.price,h.price===null?'':h.qty*h.price,h.price===null?'':h.qty*(h.price-h.cost)]);
+      downloadContent('StockScope_Portfolio.csv','\ufeff'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+    });
+    $('backupData').addEventListener('click',()=>{
+      const backup={format:'StockScopeBackup',version:2,exportedAt:new Date().toISOString(),holdings,
+        watchlist:{custom:stocks.filter(s=>!defaultStocks.some(d=>d.ticker===s.ticker)),favorites:[...favorites],selected:selected.ticker,light}};
+      downloadContent('StockScope_Backup.json',JSON.stringify(backup,null,2),'application/json');
+    });
+    $('toPortfolio').addEventListener('click',()=>{
+      $('holdTicker').value=selected.ticker;
+      $('portfolio').scrollIntoView({behavior:'smooth',block:'start'});
+      $('holdingMessage').textContent='เลือก '+selected.ticker+' แล้ว • กรอกจำนวนหุ้นและต้นทุนเพื่อบันทึกพอร์ต';
+    });
+    $('importData').addEventListener('click',()=>$('importDataFile').click());
+    $('importDataFile').addEventListener('change',async e=>{
+      const file=e.target.files?.[0];e.target.value='';if(!file)return;
+      if(file.size>2*1024*1024){$('holdingMessage').textContent='ไฟล์สำรองใหญ่เกิน 2 MB';return;}
+      try {
+        const data=JSON.parse(await file.text());
+        if(data.format!=='StockScopeBackup'||data.version!==2||!Array.isArray(data.holdings)||!data.watchlist||typeof data.watchlist!=='object'||data.holdings.length>250)throw Error('format');
+        const restoredHoldings=data.holdings.map(h=>({ticker:String(h.ticker||'').toUpperCase(),qty:h.qty,cost:h.cost,price:h.price}));
+        if(restoredHoldings.some(h=>!/^[A-Z0-9.\-]{1,12}$/.test(h.ticker)||!Number.isFinite(h.qty)||h.qty<=0||h.qty>1e9||!Number.isFinite(h.cost)||h.cost<0||h.cost>1e9||!(h.price===null||(Number.isFinite(h.price)&&h.price>=0&&h.price<=1e9))))throw Error('portfolio');
+        const watch=data.watchlist;
+        if(!Array.isArray(watch.custom)||watch.custom.length>250||!Array.isArray(watch.favorites)||watch.favorites.length>300)throw Error('watchlist');
+        const newCustom=watch.custom.map(x=>({ticker:String(x.ticker||'').toUpperCase(),name:String(x.name||x.ticker||'').slice(0,60),exchange:x.exchange,category:'other'}));
+        if(newCustom.some(x=>!/^[A-Z0-9.\-]{1,12}$/.test(x.ticker)||!['NASDAQ','NYSE','AMEX'].includes(x.exchange)))throw Error('symbols');
+        if(!window.confirm('นำเข้าข้อมูลสำรองและแทนที่พอร์ตกับ Watchlist ปัจจุบันหรือไม่?'))return;
+        holdings=restoredHoldings;
+        stocks.splice(defaultStocks.length,stocks.length-defaultStocks.length,...newCustom.filter(x=>!defaultStocks.some(d=>d.ticker===x.ticker)));
+        favorites=new Set(watch.favorites.filter(x=>typeof x==='string'&&/^[A-Z0-9.\-]{1,12}$/.test(x)));
+        selected=stocks.find(x=>x.ticker===watch.selected)||stocks[0];
+        const nextLight=Boolean(watch.light);
+        if(light!==nextLight){light=nextLight;document.body.classList.toggle('light',light);for(const kind of lazyLoaded)renderLazyWidget(kind);}
+        saveHoldings();save();renderHoldings();renderList();renderStockWidgets();renderMarketWidgets();refreshStockExtras();
+        $('holdingMessage').textContent='นำเข้าข้อมูลสำรองสำเร็จ ('+holdings.length+' รายการถือครอง)';
+      } catch(_){$('holdingMessage').textContent='นำเข้าไม่ได้: โปรดเลือกไฟล์ JSON ที่สำรองจาก StockScope 2.0';}
+    });
+    renderHoldings();
+    // ---- DCA simulation: end-of-month cashflows at effective monthly rate ----
+    function dcaProjection(monthly,initial,years,rate,months=12*years){
+      const r=Math.pow(1+rate/100,1/12)-1;let value=initial;
+      for(let i=0;i<months;i++)value=value*(1+r)+monthly;
+      return value;
+    }
+    function updateDca(){
+      const monthly=Number($('dcaMonthly').value),initial=Number($('dcaInitial').value),years=Number($('dcaYears').value),rate=Number($('dcaRate').value);
+      if(!Number.isFinite(monthly)||monthly<0||monthly>1e9||!Number.isFinite(initial)||initial<0||initial>1e9||!Number.isInteger(years)||years<1||years>50||!Number.isFinite(rate)||rate < -50||rate>50){
+        for(const id of ['dcaPrincipal','dcaFuture','dcaGain'])$(id).textContent='—';$('dcaChart').replaceChildren();return;
+      }
+      const principal=monthly*years*12+initial,value=dcaProjection(monthly,initial,years,rate),gain=value-principal;
+      $('dcaPrincipal').textContent=fmtTHB(principal);$('dcaFuture').textContent=fmtTHB(value);$('dcaGain').textContent=(gain>0?'+':'')+fmtTHB(gain);
+      $('dcaGain').className=gain>=0?'positive':'negative';
+      const times=[...new Set([1,Math.max(1,Math.round(years*.25)),Math.max(1,Math.round(years*.5)),Math.max(1,Math.round(years*.75)),years])].sort((a,b)=>a-b);
+      const values=times.map(t=>dcaProjection(monthly,initial,years,rate,t*12));const max=Math.max(...values,1);
+      const chart=$('dcaChart');chart.replaceChildren();
+      for(let i=0;i<times.length;i++){
+        const col=document.createElement('div');col.className='growth-col';
+        const bar=document.createElement('div');bar.className='growth-bar';bar.style.height=Math.max(3,values[i]/max*112)+'px';
+        bar.title='ปีที่ '+times[i]+': '+fmtTHB(values[i]);
+        const label=document.createElement('span');label.textContent='ปี '+times[i];col.append(bar,label);chart.appendChild(col);
+      }
+      chart.setAttribute('aria-label','มูลค่าจำลองปีสุดท้าย '+fmtTHB(value)+' จากเงินต้น '+fmtTHB(principal));
+    }
+    ['dcaMonthly','dcaInitial','dcaYears','dcaRate'].forEach(id=>$(id).addEventListener('input',updateDca));updateDca();
+    function updateGain(){
+      const buy=Number($('profitBuy').value),now=Number($('profitNow').value),qty=Number($('profitQty').value);
+      if(!validNumber($('profitBuy').value)||!validNumber($('profitNow').value)||!validNumber($('profitQty').value)||qty<=0){$('profitValue').textContent='—';$('profitPct').textContent='กรอกข้อมูลที่ถูกต้อง';return;}
+      const diff=(now-buy)*qty,pct=buy===0?null:(now-buy)/buy*100;
+      $('profitValue').textContent=fmtSignedUSD(diff);$('profitValue').className=diff>=0?'positive':'negative';
+      $('profitPct').textContent='ผลตอบแทน '+(pct===null?'ไม่สามารถคำนวณเปอร์เซ็นต์ (ต้นทุนเป็น 0)':(pct>0?'+':'')+pct.toFixed(2)+'%')+' · มูลค่ารวม '+fmtUSD(now*qty);
+    }
+    ['profitBuy','profitNow','profitQty'].forEach(id=>$(id).addEventListener('input',updateGain));updateGain();
+    function updateTime(){
+      try {$('nyTime').textContent=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());}
+      catch(_){$('nyTime').textContent='New York';}
+    }
+    updateTime();updateSession();setInterval(()=>{updateTime();updateSession();},1000);
+    renderList();renderStockWidgets();renderMarketWidgets();
+  </script>
+</body>
+</html>
