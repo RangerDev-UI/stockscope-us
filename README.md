@@ -31,3 +31,12 @@ Open `index.html` in a browser. No npm dependencies or build tools are required.
 - New **Research** section with company profiles, stock screener, and economic calendar widgets.
 - Dynamic profile and stock detail link follow the selected ticker; ETF selections show a helpful note in place of a company profile.
 - No API key or backend needed. Widget data may be delayed; this site does not provide trade execution or price alerts.
+
+## Release notes — StockScope 2.2: Direct market data
+- Prices and selected-ticker daily history chart now use Twelve Data API via `netlify/functions/market-data.mjs`.
+- Public API status check: `/.netlify/functions/market-data?type=status`. `configured: true` means the server can see a key **but does not prove it is valid**.
+- For an API functionality test visit `/.netlify/functions/market-data?type=quotes&symbols=NVDA`. A populated `quotes.NVDA` indicates the upstream quote request worked.
+- Netlify project → Environment variables: set `TWELVE_DATA_API_KEY` with **Functions** scope and redeploy.
+- Keep your API key private: never paste it in chat or commit it. Use Netlify secret environment variables.
+- Basic API data can be delayed and is subject to the Twelve Data plan quota. Prices and charts are API-backed; TradingView widgets are **still used** for heatmap, news, screeners, market tiles, and technical analysis.
+- Please check your Twelve Data agreement before publicly displaying market data; some plans may not include redistribution rights.
