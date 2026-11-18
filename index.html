@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b111b" />
   <meta name="description" content="StockScope ติดตามหุ้นสหรัฐฯ กราฟ TradingView ข่าว Heatmap พอร์ตจำลอง และเครื่องมือคำนวณ DCA" />
-  <title>StockScope 2.0 — หุ้นสหรัฐฯ | พอร์ต | DCA</title>
+  <title>StockScope 2.1 — หุ้นสหรัฐฯ | วิเคราะห์หุ้น | พอร์ต | DCA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -224,6 +224,17 @@
     @media (max-width:1100px){.fields.five{grid-template-columns:repeat(2,minmax(0,1fr))}.fields.five .primary-btn{grid-column:span 2}.section-grid{grid-template-columns:1fr}.embed-overview,.embed-heatmap{height:440px}}
     @media (max-width:760px){.quick-nav{padding:9px 15px}.quick-nav .market-hours{display:none}.wide-area{margin:0 15px 18px}.tool-grid{grid-template-columns:1fr}.portfolio-summary{gap:7px}.metric-card{padding:12px}.metric-card strong{font-size:18px}.pad-panel{padding:16px}.wide-title-row h2{font-size:21px}}
     @media (max-width:480px){.fields.five{grid-template-columns:1fr 1fr;gap:10px}.portfolio-summary{grid-template-columns:1fr}.portfolio-summary .metric-card{padding:12px 15px}.calc-fields{grid-template-columns:1fr 1fr;gap:8px}.result-strip{gap:5px}.result-tile{padding:9px}.result-tile strong{font-size:14px}.embed-extra{height:385px}.wide-title-row .hint-pill{display:none}}
+
+    /* StockScope 2.1 — information and research widgets */
+    .embed-company{height:460px}
+    .embed-calendar{height:460px}
+    .embed-screener{height:535px}
+    .research-links{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+    .research-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:12px;font-weight:700;padding:13px 16px;background:var(--card2);border:1px solid var(--line);border-radius:10px}
+    .research-link:hover{border-color:var(--accent);color:var(--accent)}
+    .insight-note{font-size:11px;color:var(--text2);line-height:1.65;margin:11px 0 0}
+    .insight-note a{color:var(--accent)}
+    @media (max-width:480px){.embed-company,.embed-calendar{height:410px}.embed-screener{height:500px}.research-link{width:100%}}
   </style>
 </head>
 <body>
@@ -241,7 +252,7 @@
     </header>
     <div class="ticker" id="tickerWidget"><div class="loading">กำลังโหลดข้อมูลราคาหุ้น…</div></div>
     <nav class="quick-nav" aria-label="ไปยังส่วนต่าง ๆ ของเว็บ">
-      <a href="#analysis">📈 กราฟหุ้น</a><a href="#market-section">🌎 ภาพรวมตลาด</a><a href="#news-section">📰 ข่าว / พื้นฐาน</a><a href="#portfolio">💼 พอร์ตของฉัน</a><a href="#tools">🧮 เครื่องมือคำนวณ</a>
+      <a href="#analysis">📈 กราฟหุ้น</a><a href="#market-section">🌎 ภาพรวมตลาด</a><a href="#news-section">📰 ข่าว / พื้นฐาน</a><a href="#insights">🔍 วิเคราะห์เชิงลึก</a><a href="#portfolio">💼 พอร์ตของฉัน</a><a href="#tools">🧮 เครื่องมือคำนวณ</a>
       <span class="market-hours" id="marketHours" title="ประเมินจากช่วงเวลาซื้อขายปกติ ไม่ได้ตรวจวันหยุดตลาด"><i class="session-dot"></i><span id="sessionLabel">กำลังตรวจสอบช่วงเวลา ET…</span></span>
     </nav>
     <div id="top" class="page-head">
@@ -287,6 +298,32 @@
       </main>
     </div>
     <div class="wide-area">
+      <section class="wide-section" id="insights">
+        <div class="wide-title-row">
+          <div><div class="eyebrow-small">MARKET RESEARCH</div><h2>🔍 วิเคราะห์หุ้นและข่าวเศรษฐกิจ</h2><p>ข้อมูลเชิงลึกของหุ้นที่เลือก ปฏิทินประกาศตัวเลขเศรษฐกิจ และเครื่องมือค้นหาหุ้นสหรัฐฯ</p></div>
+          <span class="hint-pill">ข้อมูลจาก TradingView • อาจล่าช้า</span>
+        </div>
+        <div class="section-grid">
+          <section class="panel">
+            <div class="bottom-head"><h2 class="section-name">🏢 โปรไฟล์บริษัท / อุตสาหกรรม</h2><p id="companyTickerText">รายละเอียดของ NVDA · เปลี่ยนหุ้นได้จากด้านบน</p></div>
+            <div class="embed-extra embed-company" id="companyWidget" data-lazy-widget="company"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดโปรไฟล์บริษัท…</div></div>
+          </section>
+          <section class="panel">
+            <div class="bottom-head"><h2 class="section-name">🗓️ ปฏิทินเศรษฐกิจ</h2><p>ติดตาม CPI, การจ้างงาน, ดอกเบี้ย และรายงานเศรษฐกิจต่าง ๆ • เลือกประเทศและความสำคัญในตาราง</p></div>
+            <div class="embed-extra embed-calendar" id="calendarWidget" data-lazy-widget="calendar"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดปฏิทินเศรษฐกิจ…</div></div>
+          </section>
+        </div>
+        <section class="panel" style="margin-top:17px">
+          <div class="bottom-head"><h2 class="section-name">📊 Stock Screener — คัดกรองหุ้นสหรัฐฯ</h2><p>เลือกดูหุ้นตามมูลค่าตลาด ราคา ปริมาณซื้อขาย และตัวชี้วัดอื่น ๆ ได้จากเครื่องมือด้านล่าง</p></div>
+          <div class="embed-extra embed-screener" id="screenerWidget" data-lazy-widget="screener"><div class="loading">เลื่อนมาที่นี่เพื่อโหลดตัวคัดกรองหุ้น…</div></div>
+        </section>
+        <div class="research-links">
+          <a class="research-link" href="https://www.tradingview.com/earnings-calendar/?countries=us" target="_blank" rel="noopener noreferrer">📅 ปฏิทินประกาศงบหุ้นสหรัฐฯ ↗</a>
+          <a class="research-link" href="https://www.tradingview.com/screener/" target="_blank" rel="noopener noreferrer">🔎 เปิด Stock Screener แบบเต็ม ↗</a>
+          <a class="research-link" id="researchStockLink" href="https://www.tradingview.com/symbols/NASDAQ-NVDA/" target="_blank" rel="noopener noreferrer">📌 ข้อมูลหุ้น NVDA บน TradingView ↗</a>
+        </div>
+        <p class="insight-note">เวลาและข้อมูลในวิดเจ็ตเป็นข้อมูลจาก TradingView และแหล่งที่ TradingView ใช้ บางรายการมีการหน่วงเวลา ปฏิทินอาจมีการเปลี่ยนกำหนดการ ควรยืนยันกับประกาศของบริษัทและหน่วยงานที่เกี่ยวข้องก่อนตัดสินใจลงทุน</p>
+      </section>
       <section class="wide-section" id="portfolio">
         <div class="wide-title-row"><div><div class="eyebrow-small">YOUR PORTFOLIO</div><h2>💼 พอร์ตหุ้นของฉัน</h2><p>บันทึกจำนวนหุ้นและต้นทุนเฉลี่ย แล้วกรอกราคาล่าสุดเพื่อคำนวณกำไร–ขาดทุน</p></div><span class="hint-pill">เก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น</span></div>
         <div class="panel pad-panel">
@@ -466,7 +503,7 @@
     });
 
     // ---- StockScope 2.0: supplementary TradingView widgets (lazy-loaded) ----
-    const lazyWidgetIds = {overview:'overviewWidget',heatmap:'heatmapWidget',news:'newsWidget',fundamental:'fundamentalWidget'};
+    const lazyWidgetIds = {overview:'overviewWidget',heatmap:'heatmapWidget',news:'newsWidget',fundamental:'fundamentalWidget',company:'companyWidget',calendar:'calendarWidget',screener:'screenerWidget'};
     const lazyLoaded = new Set();
     function renderLazyWidget(kind) {
       lazyLoaded.add(kind);
@@ -495,11 +532,35 @@
           symbol:symbol(selected),colorTheme:theme(),displayMode:'regular',isTransparent:true,locale:'en',width:'100%',height:'100%'
         });
       }
+
+      if(kind==='company') {
+        if(selected.category==='etf') {
+          const root=$('companyWidget');root.replaceChildren();
+          const note=document.createElement('div');note.className='empty';
+          note.textContent='โปรไฟล์บริษัทใช้กับหุ้นรายตัว — ETF เป็นกองทุนรวมหลักทรัพย์ โปรดเปิดข้อมูล ETF จากลิงก์ด้านล่างหรือเลือกหุ้นรายตัว';
+          root.appendChild(note);
+          const a=document.createElement('a');a.className='market-link';a.textContent='ดู ETF บน TradingView ↗';a.target='_blank';a.rel='noopener noreferrer';
+          a.href='https://www.tradingview.com/symbols/'+encodeURIComponent(selected.exchange)+'-'+encodeURIComponent(selected.ticker)+'/';
+          root.appendChild(a);
+        } else mountWidget('companyWidget','embed-widget-symbol-profile.js',{
+          width:'100%',height:'100%',colorTheme:theme(),isTransparent:true,symbol:symbol(selected),locale:'en'
+        });
+      }
+      if(kind==='calendar') mountWidget('calendarWidget','embed-widget-events.js',{
+        width:'100%',height:'100%',colorTheme:theme(),isTransparent:true,locale:'en'
+      });
+      if(kind==='screener') mountWidget('screenerWidget','embed-widget-screener.js',{
+        width:'100%',height:'100%',defaultColumn:'overview',defaultScreen:'most_capitalized',
+        showToolbar:true,market:'us',colorTheme:theme(),locale:'en'
+      });
     }
     function refreshStockExtras() {
       $('newsTickerText').textContent='• '+selected.ticker;
       $('fundamentalsTickerText').textContent='ข้อมูลรายได้และตัวชี้วัดพื้นฐานของ '+selected.ticker;
-      for(const kind of ['news','fundamental']) if(lazyLoaded.has(kind)) renderLazyWidget(kind);
+      $('companyTickerText').textContent='โปรไฟล์ '+selected.ticker+' • '+selected.exchange+' • บริษัท / อุตสาหกรรม';
+      $('researchStockLink').textContent='📌 ข้อมูลหุ้น '+selected.ticker+' บน TradingView ↗';
+      $('researchStockLink').href='https://www.tradingview.com/symbols/'+encodeURIComponent(selected.exchange)+'-'+encodeURIComponent(selected.ticker)+'/';
+      for(const kind of ['news','fundamental','company']) if(lazyLoaded.has(kind)) renderLazyWidget(kind);
     }
     if('IntersectionObserver' in window) {
       const observer=new IntersectionObserver(entries=>{for(const entry of entries){
