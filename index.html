@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b111b" />
-  <meta name="description" content="StockScope ติดตามหุ้นสหรัฐฯ กราฟ TradingView ข่าว Heatmap พอร์ตจำลอง และเครื่องมือคำนวณ DCA" />
-  <title>StockScope 2.1 — หุ้นสหรัฐฯ | วิเคราะห์หุ้น | พอร์ต | DCA</title>
+  <meta name="description" content="StockScope ราคาหุ้นสหรัฐฯ และกราฟรายวันจาก Twelve Data API พร้อมข่าว พอร์ตจำลอง และเครื่องมือ DCA" />
+  <title>StockScope 2.2 — ราคาหุ้นผ่าน API | พอร์ต | DCA</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -235,6 +235,26 @@
     .insight-note{font-size:11px;color:var(--text2);line-height:1.65;margin:11px 0 0}
     .insight-note a{color:var(--accent)}
     @media (max-width:480px){.embed-company,.embed-calendar{height:410px}.embed-screener{height:500px}.research-link{width:100%}}
+
+    /* API quote and chart (stockscope-api.js) */
+    .api-control{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:10px 14px;background:var(--card2);border:1px solid var(--line);border-radius:12px;margin:0 0 12px}
+    .api-control #apiStatus{font-size:12px;color:var(--text2)}
+    .api-control #apiStatus[data-ready="true"]{color:var(--accent)}
+    .api-quote{display:flex;align-items:center;gap:20px;flex-wrap:wrap;min-height:100px;padding:10px 0}
+    .api-price{font-size:clamp(26px,4vw,44px);font-weight:800;line-height:1.25}
+    .api-delta{font-size:15px;font-weight:700;margin-top:5px}
+    .api-meta{font-size:11px;color:var(--muted);margin-top:10px}
+    .api-stats{margin-left:auto;display:grid;grid-template-columns:repeat(2,minmax(92px,1fr));gap:12px 26px}
+    .api-stats span{display:block;font-size:10px;color:var(--muted)}
+    .api-stats strong{display:block;font-size:12px;color:var(--text)}
+    .api-notice{margin:10px 0;padding:16px;color:var(--text2);font-size:12px;border:1px dashed var(--line);border-radius:10px}
+    .range-controls{display:flex;gap:5px}
+    .range-controls button{cursor:pointer;color:var(--text2);font-weight:700;padding:7px 10px;font-size:11px;background:var(--card2);border:1px solid var(--line);border-radius:8px}
+    .range-controls button.active{border-color:var(--accent);color:var(--accent)}
+    .api-chart{width:100%;padding:10px}
+    .api-chart svg{display:block;width:100%;height:315px}
+    .api-chart-label{display:flex;justify-content:space-between;gap:10px;color:var(--text2);font-size:11px}
+    @media(max-width:600px){.api-stats{width:100%;margin-left:0}.api-chart svg{height:240px}.api-chart{padding:4px}.range-controls{margin-top:5px}}
   </style>
 </head>
 <body>
@@ -245,7 +265,7 @@
         <span><span class="brandname">Stock<span>Scope</span></span><span class="brandsub">US MARKET DASHBOARD</span></span>
       </a>
       <div class="topinfo">
-        <div class="live-pill"><i class="pulse"></i> ข้อมูลตลาดจาก TradingView</div>
+        <div class="live-pill"><i class="pulse"></i> ราคาหุ้นจาก Twelve Data API</div>
         <div class="clock" aria-label="เวลานิวยอร์ก"><strong id="nyTime">--:--:--</strong><small>NEW YORK · ET</small></div>
         <button class="icon-btn" id="themeButton" type="button" title="เปลี่ยนโหมดสว่าง/มืด" aria-label="เปลี่ยนธีม"><svg viewBox="0 0 24 24"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5z" /></svg></button>
       </div>
@@ -257,7 +277,7 @@
     </nav>
     <div id="top" class="page-head">
       <div><div class="eyebrow">YOUR MARKET, YOUR MOVE</div><h1>ติดตามหุ้นสหรัฐฯ <span style="color:var(--accent)">ในที่เดียว</span></h1><p class="intro">ค้นหาหุ้นที่สนใจ ดูราคา กราฟ และสัญญาณทางเทคนิคได้ง่าย ๆ</p></div>
-      <div class="source-line">แหล่งข้อมูล <b>TradingView</b><br/>ข้อมูลอาจล่าช้าตามตลาดและสิทธิ์ผู้ให้บริการ</div>
+      <div class="source-line">ราคาและกราฟ <b>Twelve Data API</b><br/>Heatmap / ข่าว / เทคนิค ยังใช้ TradingView</div>
     </div>
     <div class="layout">
       <aside class="sidebar" aria-label="รายการหุ้น">
@@ -276,12 +296,12 @@
       <main class="content" id="analysis">
         <section class="panel">
           <div class="selected-top"><div class="selected-line"><div class="selected-id"><div class="big-icon" id="bigIcon">NV</div><div><div id="currentSymbol">NVDA</div><div id="currentName">NVIDIA Corporation · NASDAQ</div></div></div><div class="selected-actions"><button class="small-btn" id="toPortfolio" type="button" title="ใส่ตัวย่อหุ้นนี้ลงในแบบฟอร์มพอร์ต">+ เพิ่มเข้าพอร์ต</button><a class="small-btn" id="tvLink" href="https://www.tradingview.com/symbols/NASDAQ-NVDA/" target="_blank" rel="noopener noreferrer">ดูบน TradingView <span class="arrow">↗</span></a></div></div></div>
-          <div class="quote-area" id="quoteWidget"><div class="loading">กำลังโหลดราคาหุ้น…</div></div>
+          <div class="api-control"><span id="apiStatus" role="status" aria-live="polite">กำลังตรวจสอบสถานะ API…</span><button id="refreshApiBtn" class="small-btn" type="button">↻ รีเฟรชราคา</button></div><div class="quote-area" id="quoteWidget"><div class="loading">กำลังโหลดราคาจาก Twelve Data…</div></div>
         </section>
         <section class="panel">
-          <div class="chart-head"><div><div class="chart-title"><span class="dot"></span><h2 class="section-name">กราฟราคาแบบโต้ตอบ</h2></div><div class="chart-sub">เปลี่ยนกรอบเวลา เพิ่ม Indicators และซูมกราฟได้ในหน้ากราฟ</div></div><span style="font-size:10px;color:var(--muted)">USD · US STOCKS</span></div>
+          <div class="chart-head"><div><div class="chart-title"><span class="dot"></span><h2 class="section-name">กราฟราคาย้อนหลัง · Twelve Data</h2></div><div class="chart-sub">กราฟราคาปิดรายวันจาก API โดยตรง ไม่ใช่กราฟเรียลไทม์</div></div><div class="range-controls" id="chartRanges"><button type="button" data-range="30">1M</button><button type="button" data-range="90">3M</button><button type="button" data-range="260" class="active">1Y</button></div></div>
           <div id="chartWidget" class="chart-container"><div class="loading">กำลังโหลดกราฟ…</div></div>
-          <div class="panel-caption">กราฟและราคาให้บริการโดย TradingView • ราคาบางตลาดอาจล่าช้า ไม่ใช่ราคาเสนอซื้อขายที่รับประกัน</div>
+          <div class="panel-caption">ราคาและกราฟมาจาก Twelve Data ผ่าน Netlify Function · ข้อมูลอาจล่าช้าตามแพ็กเกจ ผู้ให้บริการ และตลาด · ข้อมูลการวิเคราะห์ด้านล่างบางส่วนมาจาก TradingView</div>
         </section>
         <div class="bottom-grid">
           <section class="panel"><div class="bottom-head"><h2 class="section-name">กระดานราคาหุ้นยอดนิยม</h2><p>ดูราคา การเปลี่ยนแปลง และเปอร์เซ็นต์เปลี่ยนแปลงของหุ้นหลายตัว</p></div><div class="markets-container" id="marketWidget"><div class="loading">กำลังโหลดกระดานราคา…</div></div></section>
@@ -450,14 +470,7 @@
       $('bigIcon').textContent=initials(selected);
       $('technicalSubtitle').textContent='ภาพรวม Indicators ของ '+selected.ticker;
       $('tvLink').href='https://www.tradingview.com/symbols/'+encodeURIComponent(selected.exchange)+'-'+encodeURIComponent(selected.ticker)+'/';
-      mountWidget('quoteWidget','embed-widget-symbol-info.js',{
-        symbol:symbol(selected),width:'100%',locale:'en',colorTheme:theme(),isTransparent:true
-      });
-      mountWidget('chartWidget','embed-widget-advanced-chart.js',{
-        autosize:true,symbol:symbol(selected),interval:'D',timezone:'America/New_York',theme:theme(),style:'1',
-        locale:'en',allow_symbol_change:true,save_image:false,hide_top_toolbar:false,hide_side_toolbar:false,
-        withdateranges:true,calendar:false,support_host:'https://www.tradingview.com'
-      });
+      if(window.stockscopeApiRefresh)window.stockscopeApiRefresh();
       mountWidget('technicalWidget','embed-widget-technical-analysis.js',{
         interval:'1D',width:'100%',height:'100%',isTransparent:true,symbol:symbol(selected),showIntervalTabs:true,
         displayMode:'single',locale:'en',colorTheme:theme()
@@ -736,5 +749,6 @@
     updateTime();updateSession();setInterval(()=>{updateTime();updateSession();},1000);
     renderList();renderStockWidgets();renderMarketWidgets();
   </script>
+  <script src="/stockscope-api.js" defer></script>
 </body>
 </html>
