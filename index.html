@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b111b" />
   <meta name="description" content="StockScope ราคาหุ้นสหรัฐฯ และกราฟรายวันจาก Twelve Data API พร้อมข่าว พอร์ตจำลอง และเครื่องมือ DCA" />
-  <title>StockScope 2.2 — ราคาหุ้นผ่าน API | พอร์ต | DCA</title>
+  <title>StockScope 3.0 — Watchlist API | กราฟแท่งเทียน RSI MACD | พอร์ต</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -255,6 +255,14 @@
     .api-chart svg{display:block;width:100%;height:315px}
     .api-chart-label{display:flex;justify-content:space-between;gap:10px;color:var(--text2);font-size:11px}
     @media(max-width:600px){.api-stats{width:100%;margin-left:0}.api-chart svg{height:240px}.api-chart{padding:4px}.range-controls{margin-top:5px}}
+    /* StockScope 3.0 */
+    .watch-toolbar,.portfolio-api-toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 12px;color:var(--text2);font-size:11px}
+    .watch-toolbar{padding:4px 12px 10px}
+    .watch-price{display:block;font-weight:700;font-size:12px;margin-top:4px}
+    .api-chart svg{height:auto;min-height:300px;max-height:660px;aspect-ratio:1000/640}
+    .api-chart-legend,.chart-data-note{font-size:11px;line-height:1.7;color:var(--text2);padding:6px 12px}
+    .api-notice{margin:10px 0;padding:16px;color:var(--text2);border:1px dashed var(--line);border-radius:10px}
+    @media(max-width:650px){.api-chart svg{min-height:230px}.portfolio-api-toolbar button{width:100%}}
   </style>
 </head>
 <body>
@@ -286,7 +294,7 @@
           <div class="searchbox"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input id="searchInput" type="search" placeholder="ค้นหา NVDA, Apple, Tesla..." aria-label="ค้นหาหุ้น" autocomplete="off" /></div>
           <nav class="filters" aria-label="กรองรายการ"><button class="filter selected" type="button" data-filter="all">ทั้งหมด</button><button class="filter" type="button" data-filter="favorites">★ โปรด</button><button class="filter" type="button" data-filter="tech">เทค/AI</button><button class="filter" type="button" data-filter="etf">ETF</button></nav>
         </div>
-        <div class="stocks-list" id="stocksList" aria-live="polite"></div>
+        <div class="watch-toolbar"><span id="watchlistStatus" role="status">ราคาหุ้นโปรดจาก Twelve Data · อาจล่าช้า</span><button class="small-btn" type="button" id="refreshWatchlistBtn">↻ Watchlist</button></div><div class="stocks-list" id="stocksList" aria-live="polite"></div>
         <form class="addbox" id="addStockForm">
           <label for="customSymbol">+ เพิ่มหุ้นที่ต้องการติดตาม</label>
           <div class="addline"><input type="text" id="customSymbol" maxlength="12" placeholder="เช่น CRWD" aria-label="ตัวย่อหุ้น" required pattern="[A-Za-z0-9.\-]{1,12}"/><select id="customExchange" aria-label="ตลาดหลักทรัพย์"><option value="NASDAQ">NASDAQ</option><option value="NYSE">NYSE</option><option value="AMEX">AMEX</option></select><button type="submit" title="เพิ่มหุ้น">+</button></div>
@@ -299,8 +307,8 @@
           <div class="api-control"><span id="apiStatus" role="status" aria-live="polite">กำลังตรวจสอบสถานะ API…</span><button id="refreshApiBtn" class="small-btn" type="button">↻ รีเฟรชราคา</button></div><div class="quote-area" id="quoteWidget"><div class="loading">กำลังโหลดราคาจาก Twelve Data…</div></div>
         </section>
         <section class="panel">
-          <div class="chart-head"><div><div class="chart-title"><span class="dot"></span><h2 class="section-name">กราฟราคาย้อนหลัง · Twelve Data</h2></div><div class="chart-sub">กราฟราคาปิดรายวันจาก API โดยตรง ไม่ใช่กราฟเรียลไทม์</div></div><div class="range-controls" id="chartRanges"><button type="button" data-range="30">1M</button><button type="button" data-range="90">3M</button><button type="button" data-range="260" class="active">1Y</button></div></div>
-          <div id="chartWidget" class="chart-container"><div class="loading">กำลังโหลดกราฟ…</div></div>
+          <div class="chart-head"><div><div class="chart-title"><span class="dot"></span><h2 class="section-name">กราฟแท่งเทียน · EMA20/50 · RSI14 · MACD</h2></div><div class="chart-sub">OHLC รายวัน · ตัวชี้วัดคำนวณในเบราว์เซอร์จากข้อมูลย้อนหลัง</div></div><div class="range-controls" id="chartRanges"><button type="button" data-range="30">1M</button><button type="button" data-range="90" class="active">3M</button><button type="button" data-range="260">1Y</button></div></div>
+          <div id="chartWidget" class="chart-container"><div class="loading">กำลังโหลดกราฟ…</div></div><p id="chartStats" class="chart-data-note">กราฟรายวันจาก Twelve Data · อาจล่าช้า</p>
           <div class="panel-caption">ราคาและกราฟมาจาก Twelve Data ผ่าน Netlify Function · ข้อมูลอาจล่าช้าตามแพ็กเกจ ผู้ให้บริการ และตลาด · ข้อมูลการวิเคราะห์ด้านล่างบางส่วนมาจาก TradingView</div>
         </section>
         <div class="bottom-grid">
@@ -345,11 +353,11 @@
         <p class="insight-note">เวลาและข้อมูลในวิดเจ็ตเป็นข้อมูลจาก TradingView และแหล่งที่ TradingView ใช้ บางรายการมีการหน่วงเวลา ปฏิทินอาจมีการเปลี่ยนกำหนดการ ควรยืนยันกับประกาศของบริษัทและหน่วยงานที่เกี่ยวข้องก่อนตัดสินใจลงทุน</p>
       </section>
       <section class="wide-section" id="portfolio">
-        <div class="wide-title-row"><div><div class="eyebrow-small">YOUR PORTFOLIO</div><h2>💼 พอร์ตหุ้นของฉัน</h2><p>บันทึกจำนวนหุ้นและต้นทุนเฉลี่ย แล้วกรอกราคาล่าสุดเพื่อคำนวณกำไร–ขาดทุน</p></div><span class="hint-pill">เก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น</span></div>
+        <div class="wide-title-row"><div><div class="eyebrow-small">YOUR PORTFOLIO</div><h2>💼 พอร์ตหุ้นของฉัน</h2><p>บันทึกจำนวนหุ้นและต้นทุนเฉลี่ย ระบบใช้ราคา API ล่าสุดที่ดึงได้คำนวณกำไร–ขาดทุน และใช้ราคาที่กรอกเองเมื่อไม่มีข้อมูล API</p></div><span class="hint-pill">เก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น</span></div>
         <div class="panel pad-panel">
-          <div class="portfolio-summary">
+          <div class="portfolio-api-toolbar"><span id="portfolioApiStatus" role="status">ใช้ราคา API เมื่อมีข้อมูล · อาจล่าช้า</span><button id="refreshPortfolioBtn" type="button" class="secondary-btn">↻ อัปเดตราคาพอร์ต (สูงสุด 6 ตัว)</button></div><div class="portfolio-summary">
             <div class="metric-card"><span class="metric-label">ต้นทุนรวม</span><strong id="portfolioCost">$0.00</strong><span class="detail">รวมต้นทุนจากรายการที่กรอก</span></div>
-            <div class="metric-card"><span class="metric-label">มูลค่าพอร์ตตามราคาที่กรอก</span><strong id="portfolioValue">—</strong><span class="detail" id="portfolioValueDetail">กรอกราคาปัจจุบันเพื่อคำนวณ</span></div>
+            <div class="metric-card"><span class="metric-label">มูลค่าพอร์ตจาก API / ราคาที่กรอก</span><strong id="portfolioValue">—</strong><span class="detail" id="portfolioValueDetail">ใช้ราคาจาก API หรือกรอกเอง</span></div>
             <div class="metric-card"><span class="metric-label">กำไร / ขาดทุน รวม</span><strong id="portfolioProfit">—</strong><span class="detail" id="portfolioProfitDetail">ยังไม่มีข้อมูลราคาที่ครบถ้วน</span></div>
           </div>
           <h3 class="data-title">เพิ่มรายการถือครอง</h3><p class="data-desc">หากเพิ่มหุ้นตัวเดิมอีกครั้ง ระบบจะรวมจำนวนหุ้นและคำนวณต้นทุนเฉลี่ยใหม่</p>
@@ -360,7 +368,7 @@
             <div class="field"><label for="holdPrice">ราคาล่าสุด (USD) ไม่บังคับ</label><input id="holdPrice" type="number" min="0" max="1000000000" step="any" placeholder="กรอกเอง"/></div>
             <button type="submit" class="primary-btn">+ เพิ่มเข้าพอร์ต</button>
           </form>
-          <p class="form-note" id="holdingMessage" role="status">หมายเหตุ: ราคาจาก TradingView ไม่สามารถดึงเข้าเครื่องคำนวณนี้ได้อัตโนมัติ กรุณากรอกราคาด้วยตัวเอง</p>
+          <p class="form-note" id="holdingMessage" role="status">ราคา API อาจล่าช้า และอัปเดตได้สูงสุด 6 หุ้นต่อรอบ; เมื่อไม่มีราคา API ระบบใช้ราคาที่กรอกเอง หากไม่ครบจะแสดงมูลค่าพอร์ตเป็น —</p>
           <div class="table-scroller"><table class="portfolio-table"><thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุน/หุ้น</th><th>ราคาล่าสุด (แก้ไขได้)</th><th>มูลค่าตลาด</th><th>กำไร/ขาดทุน</th><th></th></tr></thead><tbody id="holdingsBody"><tr><td class="empty-state" colspan="7">ยังไม่มีหุ้นในพอร์ต</td></tr></tbody></table></div>
           <div class="actions-row" style="margin-top:13px"><button class="secondary-btn" type="button" id="exportPortfolio">↓ ส่งออกพอร์ต CSV</button><button class="secondary-btn" type="button" id="backupData">↓ สำรองข้อมูลทั้งหมด JSON</button><button class="secondary-btn" type="button" id="importData">↑ นำเข้าข้อมูลสำรอง</button><input type="file" accept=".json,application/json" id="importDataFile" hidden aria-label="เลือกไฟล์สำรองข้อมูล JSON"/><span class="note">คำนวณเป็น USD ยังไม่รวมค่าธรรมเนียม ภาษี และอัตราแลกเปลี่ยน</span></div>
         </div>
@@ -449,6 +457,8 @@
         const main=document.createElement('div');main.className='stock-main';
         const strong=document.createElement('strong');strong.textContent=s.ticker;
         const name=document.createElement('span');name.textContent=s.name;main.append(strong,name);
+        const q=window.stockscopeQuoteCache?.get(s.ticker);
+        if(q&&Number.isFinite(Number(q.last))&&Number(q.last)>0){const price=document.createElement('span');price.className='watch-price';price.textContent='$'+Number(q.last).toFixed(2)+(q.percentChange==null?'':' · '+(Number(q.percentChange)>0?'+':'')+Number(q.percentChange).toFixed(2)+'%');price.classList.toggle('positive',Number(q.percentChange)>0);price.classList.toggle('negative',Number(q.percentChange)<0);main.appendChild(price);}
         const star=document.createElement('button');star.type='button';star.className='star'+(favorites.has(s.ticker)?' on':'');star.textContent=favorites.has(s.ticker)?'★':'☆';star.title=favorites.has(s.ticker)?'นำออกจากรายการโปรด':'เพิ่มในรายการโปรด';star.setAttribute('aria-label',star.title);
         star.addEventListener('click',e=>{e.stopPropagation();if(favorites.has(s.ticker)) favorites.delete(s.ticker); else favorites.add(s.ticker);save();renderList();});
         row.addEventListener('click',()=>selectStock(s));row.addEventListener('keydown',e=>{if(e.target===row&&(e.key==='Enter'||e.key===' ')){e.preventDefault();selectStock(s);}});
@@ -616,13 +626,16 @@
     function renderHoldings(){
       const root=$('holdingsBody');root.replaceChildren();
       const totalCost=holdings.reduce((sum,h)=>sum+h.qty*h.cost,0);
-      const complete=holdings.length>0&&holdings.every(h=>h.price!==null);
-      const totalValue=complete?holdings.reduce((sum,h)=>sum+h.qty*h.price,0):null;
+      const apiQuote=h=>window.stockscopeQuoteCache?.get(h.ticker);
+      const marketPrice=h=>{const q=apiQuote(h);return q&&Number.isFinite(Number(q.last))&&Number(q.last)>0?Number(q.last):h.price;};
+      const fromApi=holdings.filter(h=>{const q=apiQuote(h);return q&&Number.isFinite(Number(q.last))&&Number(q.last)>0;}).length;
+      const complete=holdings.length>0&&holdings.every(h=>marketPrice(h)!==null);
+      const totalValue=complete?holdings.reduce((sum,h)=>sum+h.qty*marketPrice(h),0):null;
       const totalProfit=complete?totalValue-totalCost:null;
       $('portfolioCost').textContent=fmtUSD(totalCost);
       $('portfolioValue').textContent=complete?fmtUSD(totalValue):'—';
       $('portfolioProfit').textContent=complete?fmtSignedUSD(totalProfit):'—';
-      $('portfolioValueDetail').textContent=complete?'ราคาที่กรอกเอง • ไม่ใช่ราคาเรียลไทม์':(holdings.length?'กรอกราคาให้ครบทุกหุ้นเพื่อคำนวณ':'ยังไม่มีรายการถือครอง');
+      $('portfolioValueDetail').textContent=complete?'ราคา API '+fromApi+'/'+holdings.length+' ตัว · ที่เหลือใช้ราคากรอกเอง · อาจล่าช้า':(holdings.length?'ข้อมูลราคาไม่ครบทุกตัว · อัปเดต API หรือกรอกราคาเอง':'ยังไม่มีรายการถือครอง');
       $('portfolioProfitDetail').textContent=complete?((totalCost>0?(totalProfit/totalCost*100).toFixed(2)+'%':'ไม่สามารถคิดเปอร์เซ็นต์เมื่อต้นทุนเป็นศูนย์')):'ยังไม่มีข้อมูลราคาครบถ้วน';
       $('portfolioProfit').classList.toggle('positive',complete&&totalProfit>=0);
       $('portfolioProfit').classList.toggle('negative',complete&&totalProfit<0);
@@ -632,14 +645,18 @@
         tr.appendChild(makeCell(fmtNumber(h.qty)));tr.appendChild(makeCell(fmtUSD(h.cost)));
         const priceCell=document.createElement('td');const input=document.createElement('input');
         input.type='number';input.min='0';input.max='1000000000';input.step='any';input.className='price-input';
-        input.value=h.price===null?'':String(h.price);input.placeholder='กรอกราคา';input.setAttribute('aria-label','ราคาล่าสุดของ '+h.ticker);
+        input.value=h.price===null?'':String(h.price);input.placeholder='ราคาเอง (สำรอง)';input.setAttribute('aria-label','ราคาล่าสุดของ '+h.ticker);
         input.addEventListener('change',()=>{
           const str=input.value.trim();if(str!==''&&!validNumber(str)){input.value=h.price===null?'':String(h.price);$('holdingMessage').textContent='ราคาไม่ถูกต้อง ต้องอยู่ระหว่าง 0 ถึง 1,000,000,000';return;}
           h.price=str===''?null:Number(str);saveHoldings();renderHoldings();
         });
         priceCell.appendChild(input);tr.appendChild(priceCell);
-        tr.appendChild(makeCell(h.price===null?'—':fmtUSD(h.qty*h.price)));
-        const pnl=h.price===null?null:h.qty*(h.price-h.cost);
+        const effective=marketPrice(h);
+        const valueCell=makeCell(effective===null?'—':fmtUSD(h.qty*effective));
+        const fromLive=apiQuote(h)&&Number.isFinite(Number(apiQuote(h).last))&&Number(apiQuote(h).last)>0;
+        valueCell.title=fromLive?'คำนวณจากราคา Twelve Data API (อาจล่าช้า)':'คำนวณจากราคาที่กรอกเอง';
+        tr.appendChild(valueCell);
+        const pnl=effective===null?null:h.qty*(effective-h.cost);
         const pnlCell=makeCell(pnl===null?'—':fmtSignedUSD(pnl));if(pnl!==null)pnlCell.className=pnl>=0?'positive':'negative';tr.appendChild(pnlCell);
         const control=document.createElement('td');const del=document.createElement('button');del.type='button';del.className='delete-btn';del.textContent='ลบ';del.setAttribute('aria-label','ลบ '+h.ticker+' ออกจากพอร์ต');
         del.addEventListener('click',()=>{holdings=holdings.filter(x=>x!==h);saveHoldings();renderHoldings();$('holdingMessage').textContent='ลบ '+h.ticker+' จากพอร์ตแล้ว';});
@@ -659,7 +676,7 @@
         if(price!==null) existing.price=price;
       }else if(holdings.length<250){holdings.push({ticker,qty,cost,price});}
       else{$('holdingMessage').textContent='รายการเต็มแล้ว (สูงสุด 250 หุ้น)';return;}
-      saveHoldings();renderHoldings();$('holdingMessage').textContent='บันทึก '+ticker+' สำเร็จ • ราคาล่าสุดต้องกรอกและปรับเอง';
+      saveHoldings();renderHoldings();if(window.stockscopePortfolioChanged)window.stockscopePortfolioChanged();$('holdingMessage').textContent='บันทึก '+ticker+' สำเร็จ • หากมีราคา API จะใช้คำนวณอัตโนมัติ';
       $('holdTicker').value='';$('holdQty').value='';$('holdAvg').value='';$('holdPrice').value='';
     });
     function downloadContent(name,content,mime){
@@ -749,6 +766,7 @@
     updateTime();updateSession();setInterval(()=>{updateTime();updateSession();},1000);
     renderList();renderStockWidgets();renderMarketWidgets();
   </script>
+  <script src="/stockscope-indicators.js" defer></script>
   <script src="/stockscope-api.js" defer></script>
 </body>
 </html>
