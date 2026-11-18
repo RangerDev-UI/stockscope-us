@@ -5,6 +5,7 @@ StockScope is a Thai-language, responsive stock dashboard built with plain HTML,
 ## Features
 - US stock / ETF search and custom watchlist (NVDA, PLTR, MSFT, GOOGL, VOO, QQQM, and more)
 - TradingView stock chart, market overview, heatmap, and news widgets
+- Company profile for selected individual stocks, US stock screener, economic calendar, and US earnings calendar link
 - Manual portfolio tracker and profit/loss calculator
 - DCA projection tools
 - Browser-local settings and JSON data backup
@@ -25,3 +26,8 @@ Browser data are stored in `localStorage` on the current device and browser, not
 
 ## Local use
 Open `index.html` in a browser. No npm dependencies or build tools are required.
+
+## Release notes — StockScope 2.1
+- New **Research** section with company profiles, stock screener, and economic calendar widgets.
+- Dynamic profile and stock detail link follow the selected ticker; ETF selections show a helpful note in place of a company profile.
+- No API key or backend needed. Widget data may be delayed; this site does not provide trade execution or price alerts.
