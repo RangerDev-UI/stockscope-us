@@ -1,4 +1,4 @@
-# StockScope 2.0 — US Stock Dashboard
+# StockScope 3.0 — US Stock Dashboard
 
 StockScope is a Thai-language, responsive stock dashboard built with plain HTML, CSS, and JavaScript.
 
@@ -40,3 +40,20 @@ Open `index.html` in a browser. No npm dependencies or build tools are required.
 - Keep your API key private: never paste it in chat or commit it. Use Netlify secret environment variables.
 - Basic API data can be delayed and is subject to the Twelve Data plan quota. Prices and charts are API-backed; TradingView widgets are **still used** for heatmap, news, screeners, market tiles, and technical analysis.
 - Please check your Twelve Data agreement before publicly displaying market data; some plans may not include redistribution rights.
+
+## StockScope 3.0 — API watchlist, candlesticks, and portfolio
+
+- The main selected-stock quote, favorites watchlist, and portfolio pricing use Twelve Data through `/.netlify/functions/market-data`.
+- Favorite symbols and up to six portfolio tickers are requested per refresh, to respect entry-level API credits. Other tickers can be loaded by selecting them; a process-local rate limiter is not a globally coordinated quota.
+- The daily OHLC candlestick chart calculates EMA20, EMA50, RSI14 and MACD(12,26,9) in the browser, using `stockscope-indicators.js`. No fabricated sample prices.
+- Portfolio valuations prefer a cached API quote for each symbol, falling back to the user's manually entered price when unavailable. If a position has neither, the total value and P/L are intentionally left blank rather than silently omitting holdings.
+- Portfolio holdings and favorites remain in localStorage; original CSV/JSON backup and restore, DCA calculator, heatmap, economic calendar and TradingView research widgets are retained.
+- Quotes may be delayed and are not guaranteed executable prices. Public redistribution rights must be checked against the Twelve Data agreement.
+
+### Setup
+1. In Netlify Project configuration → Environment variables, set the secret `TWELVE_DATA_API_KEY` for Functions and redeploy.
+2. Check `/.netlify/functions/market-data?type=status` for `configured:true` (configuration only).
+3. Check `/.netlify/functions/market-data?type=quotes&symbols=NVDA` for a populated quote (validates the upstream call).
+4. Visit the site, hard refresh, and try the favorite Watchlist, candle chart, and portfolio buttons.
+
+Note: The free plan can exhaust its API credits. Repeated refreshes may return HTTP 429; wait before trying again. Netlify builds from `main` when GitHub continuous deployment is enabled.
