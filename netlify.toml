@@ -1,0 +1,3 @@
+# StockScope is a static HTML application. No build command is necessary.
+[build]
+  publish = "."
